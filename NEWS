@@ -1,0 +1,10 @@
+OddWord - Release History
+
+release-1.0.0.1 - 2012.12.30
+
+  * Fixed compilation with base-4.6 (GHC 7.6).
+  * Fixed bug in Read instance and extended test suite.
+
+release-1.0.0 - 2011.07.21
+
+  * Initial release.

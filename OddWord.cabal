@@ -1,8 +1,8 @@
 name:               OddWord
-version:            1.0.0
+version:            1.0.0.1
 license:            BSD3
 license-file:       LICENSE
-copyright:          (c) 2011 Robin KAY
+copyright:          (c) 2011-2012 Robin KAY
 author:             Robin KAY
 maintainer:         Robin KAY <komadori@gekkou.co.uk>
 synopsis:           Provides a wrapper for deriving word types with fewer bits.
@@ -10,7 +10,7 @@ category:           Data
 stability:          Stable
 cabal-version:      >= 1.10
 build-type:         Simple
-extra-source-files: test/*.hs
+extra-source-files: test/*.hs NEWS
 homepage:           http://www.gekkou.co.uk/
 description:
     Provdes the 'OddWord' type, which wraps an existing integer type and
