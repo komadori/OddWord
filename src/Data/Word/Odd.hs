@@ -62,10 +62,10 @@ instance (TypeNum a) => TypeNum (Zero a) where
 pairOW :: (a, a) -> (OddWord a n, OddWord a n)
 pairOW = uncurry ((,) `on` OW)
 
-owMask :: forall a n. (Bits a, TypeNum n) => OddWord a n
+owMask :: forall a n. (Num a, Bits a, TypeNum n) => OddWord a n
 owMask = OW $ (flip (-) 1) $ bit $ fromTypeNum (typeNum :: TypeNumBuilder n)
 
-maskOW :: forall a n. (Bits a, TypeNum n) => a -> OddWord a n
+maskOW :: forall a n. (Num a, Bits a, TypeNum n) => a -> OddWord a n
 maskOW w = OW $ w .&. unOW (owMask :: OddWord a n)
 
 mapFst :: (a -> b) -> [(a, c)] -> [(b, c)]
@@ -76,7 +76,7 @@ instance (Show a) => Show (OddWord a n) where
     show (OW x)          = show x
     showList xs          = showList $ map unOW xs 
 
-instance (Read a, Bits a, TypeNum n) => Read (OddWord a n) where
+instance (Read a, Num a, Bits a, TypeNum n) => Read (OddWord a n) where
     readsPrec p s = mapFst maskOW $ readsPrec p s
     readList s    = mapFst (map maskOW) $ readList s
 
@@ -120,7 +120,7 @@ instance (Integral a, Bits a, TypeNum n) => Integral (OddWord a n) where
     divMod  (OW n) (OW d) = pairOW $ divMod n d
     toInteger (OW x) = toInteger x
 
-instance (Bits a, TypeNum n) => Bits (OddWord a n) where
+instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
     (OW l) .&. (OW r) = OW $ l .&. r
     (OW l) .|. (OW r) = OW $ l .|. r
     xor (OW l) (OW r) = OW $ xor l r
@@ -148,6 +148,7 @@ instance (Bits a, TypeNum n) => Bits (OddWord a n) where
         shiftR x n' .|. (shiftL x (w-n') .&. unOW (owMask :: OddWord a n))
         where n' = n `mod` w
               w  = fromTypeNum (typeNum :: TypeNumBuilder n)
+    popCount (OW x) = popCount x
 
 type Word1  = OddWord Word8             (One  ())
 type Word2  = OddWord Word8        (One (Zero ()))
