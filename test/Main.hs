@@ -14,7 +14,7 @@ data UFunc =
     Add   Integer | Mul   Integer | Sub   Integer | SubR  Integer |
     Div   Integer | Mod   Integer | Quot  Integer | Rem   Integer |
     DivR  Integer | ModR  Integer | QuotR Integer | RemR  Integer |
-    Neg           | Abs           | Inv           |
+    Neg           | Abs           | Inv           | AddDigit      |
     And   Integer | Or    Integer | Xor   Integer |
     ClrB  Int     | SetB  Int     | InvB  Int     |
     Shift Int     | Rot   Int
@@ -37,6 +37,7 @@ instance Arbitrary (UFunc) where
         return Neg,
         return Abs,
         return Inv,
+        return AddDigit,
         choose (0, 0xffff) >>= return . And,
         choose (0, 0xffff) >>= return . Or,
         choose (0, 0xffff) >>= return . Xor,
@@ -62,7 +63,7 @@ safeRem :: (Integral a) => a -> a -> a
 safeRem d 0 = 0
 safeRem d n = rem d n
 
-fromUFunc :: (Integral a, Bounded a, Bits a) => UFunc -> a -> a
+fromUFunc :: (Integral a, Bounded a, Bits a, Read a, Show a) => UFunc -> a -> a
 fromUFunc (Add   i) x = x + (fromInteger i)
 fromUFunc (Mul   i) x = x * (fromInteger i)
 fromUFunc (Sub   i) x = x - (fromInteger i)
@@ -78,6 +79,7 @@ fromUFunc (RemR  i) x = safeRem  (fromInteger i) x
 fromUFunc  Neg      x = negate x
 fromUFunc  Abs      x = abs x
 fromUFunc  Inv      x = complement x
+fromUFunc  AddDigit x = read . ('1':) $ show x
 fromUFunc (And   i) x = x .&. (fromInteger i)
 fromUFunc (Or    i) x = x .|. (fromInteger i)
 fromUFunc (Xor   i) x = xor x (fromInteger i)
