@@ -65,6 +65,9 @@ pairOW = uncurry ((,) `on` OW)
 owMask :: forall a n. (Bits a, TypeNum n) => OddWord a n
 owMask = OW $ (flip (-) 1) $ bit $ fromTypeNum (typeNum :: TypeNumBuilder n)
 
+maskOW :: forall a n. (Bits a, TypeNum n) => a -> OddWord a n
+maskOW w = OW $ w .&. unOW (owMask :: OddWord a n)
+
 mapFst :: (a -> b) -> [(a, c)] -> [(b, c)]
 mapFst f xs = map (\(a,c) -> (f a,c)) xs
 
@@ -73,19 +76,19 @@ instance (Show a) => Show (OddWord a n) where
     show (OW x)          = show x
     showList xs          = showList $ map unOW xs 
 
-instance (Read a) => Read (OddWord a n) where
-    readsPrec p s = mapFst OW $ readsPrec p s
-    readList s    = mapFst (map OW) $ readList s
+instance (Read a, Bits a, TypeNum n) => Read (OddWord a n) where
+    readsPrec p s = mapFst maskOW $ readsPrec p s
+    readList s    = mapFst (map maskOW) $ readList s
 
 instance (Num a, Bits a, TypeNum n) => Num (OddWord a n) where
-    (OW l) + (OW r) = OW $ (l + r)  .&. unOW (owMask :: OddWord a n)
-    (OW l) * (OW r) = OW $ (l * r)  .&. unOW (owMask :: OddWord a n)
-    (OW l) - (OW r) = OW $ (l - r)  .&. unOW (owMask :: OddWord a n)
-    negate (OW x)   = OW $ negate x .&. unOW (owMask :: OddWord a n)
+    (OW l) + (OW r) = maskOW $ (l + r)
+    (OW l) * (OW r) = maskOW $ (l * r)
+    (OW l) - (OW r) = maskOW $ (l - r)
+    negate (OW x)   = maskOW $ negate x
     abs w = w
     signum (OW x) | x == 0    = 0
                   | otherwise = 1
-    fromInteger i = OW $ fromInteger i .&. unOW (owMask :: OddWord a n) 
+    fromInteger i = maskOW $ fromInteger i 
 
 instance (Real a, Bits a, TypeNum n) => Real (OddWord a n) where
     toRational (OW x) = toRational x
@@ -121,7 +124,7 @@ instance (Bits a, TypeNum n) => Bits (OddWord a n) where
     (OW l) .&. (OW r) = OW $ l .&. r
     (OW l) .|. (OW r) = OW $ l .|. r
     xor (OW l) (OW r) = OW $ xor l r
-    complement (OW x) = OW $ complement x .&. unOW (owMask :: OddWord a n)
+    complement (OW x) = maskOW $ complement x
     bit n | n < fromTypeNum (typeNum :: TypeNumBuilder n)
           = OW $ bit n
           | otherwise = OW 0
@@ -135,7 +138,7 @@ instance (Bits a, TypeNum n) => Bits (OddWord a n) where
     testBit (OW x) n = testBit x n
     bitSize _  = fromTypeNum (typeNum :: TypeNumBuilder n)
     isSigned _ = False 
-    shiftL (OW x) n = OW $ shiftL x n .&. unOW (owMask :: OddWord a n)
+    shiftL (OW x) n = maskOW $ shiftL x n
     shiftR (OW x) n = OW $ shiftR x n
     rotateL (OW x) n = OW $
         (shiftL x n' .&. unOW (owMask :: OddWord a n)) .|. shiftR x (w-n')
