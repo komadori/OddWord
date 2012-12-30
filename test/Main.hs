@@ -17,7 +17,7 @@ data UFunc =
     Neg           | Abs           | Inv           | AddDigit      |
     And   Integer | Or    Integer | Xor   Integer |
     ClrB  Int     | SetB  Int     | InvB  Int     |
-    Shift Int     | Rot   Int
+    Shift Int     | Rot   Int     | PopCnt
     deriving Show
 
 instance Arbitrary (UFunc) where
@@ -45,7 +45,8 @@ instance Arbitrary (UFunc) where
         choose (0, 32) >>= return . SetB,
         choose (0, 32) >>= return . InvB,
         choose (-32, 32) >>= return . Shift,
-        choose (-32, 32) >>= return . Rot]
+        choose (-32, 32) >>= return . Rot,
+        return PopCnt]
 
 safeDiv :: (Integral a, Bounded a) => a -> a -> a
 safeDiv d 0 = maxBound
@@ -88,6 +89,7 @@ fromUFunc (SetB  n) x = setBit x n
 fromUFunc (InvB  n) x = complementBit x n
 fromUFunc (Shift n) x = shift x n
 fromUFunc (Rot   n) x = rotate x n
+fromUFunc  PopCnt   x = fromIntegral $ popCount x
 
 type TestWord16 = OddWord Word32 (One (Zero (Zero (Zero (Zero ())))))
 
