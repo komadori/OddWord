@@ -99,8 +99,39 @@ verifyTestWord16 us =
         tstFn = foldr (.) id $ map fromUFunc us :: TestWord16 -> TestWord16
     in toInteger (refFn 0) == toInteger (tstFn 0)
 
+preDefWordLengths :: [Int]
+preDefWordLengths = [
+    bitSize (0 :: Word1), bitSize (0 :: Word2), bitSize (0 :: Word3),
+    bitSize (0 :: Word4), bitSize (0 :: Word5), bitSize (0 :: Word6),
+    bitSize (0 :: Word7), bitSize (0 :: Word8), bitSize (0 :: Word9),
+    bitSize (0 :: Word10), bitSize (0 :: Word11), bitSize (0 :: Word12),
+    bitSize (0 :: Word13), bitSize (0 :: Word14), bitSize (0 :: Word15),
+    bitSize (0 :: Word16), bitSize (0 :: Word17), bitSize (0 :: Word18),
+    bitSize (0 :: Word19), bitSize (0 :: Word20), bitSize (0 :: Word21),
+    bitSize (0 :: Word22), bitSize (0 :: Word23), bitSize (0 :: Word24),
+    bitSize (0 :: Word25), bitSize (0 :: Word26), bitSize (0 :: Word27),
+    bitSize (0 :: Word28), bitSize (0 :: Word29), bitSize (0 :: Word30),
+    bitSize (0 :: Word31), bitSize (0 :: Word32), bitSize (0 :: Word33),
+    bitSize (0 :: Word34), bitSize (0 :: Word35), bitSize (0 :: Word36),
+    bitSize (0 :: Word37), bitSize (0 :: Word38), bitSize (0 :: Word39),
+    bitSize (0 :: Word40), bitSize (0 :: Word41), bitSize (0 :: Word42),
+    bitSize (0 :: Word43), bitSize (0 :: Word44), bitSize (0 :: Word45),
+    bitSize (0 :: Word46), bitSize (0 :: Word47), bitSize (0 :: Word48),
+    bitSize (0 :: Word49), bitSize (0 :: Word50), bitSize (0 :: Word51),
+    bitSize (0 :: Word52), bitSize (0 :: Word53), bitSize (0 :: Word54),
+    bitSize (0 :: Word55), bitSize (0 :: Word56), bitSize (0 :: Word57),
+    bitSize (0 :: Word58), bitSize (0 :: Word59), bitSize (0 :: Word60),
+    bitSize (0 :: Word61), bitSize (0 :: Word62), bitSize (0 :: Word63)]
+
 main :: IO ()
 main = do
+    -- Verify lengths of predefined odd word synonyms
+    mapM_ (\(u,v) -> putStrLn (
+        showString "Error: Word" . shows u . showString " has length " $
+            shows v ".") >> exitFailure) $
+        map fst $ filter snd $ map (\t -> (t,uncurry (/=) t)) $
+        zip [1..] preDefWordLengths
+    -- Verify correctness of operations on a test word type
     r <- quickCheckWithResult stdArgs {maxSuccess = 1000} verifyTestWord16
     case r of
         Success _ _ _ -> exitSuccess
