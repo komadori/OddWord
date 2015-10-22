@@ -60,4 +60,4 @@ Test-Suite oddword-tests-typelits
 
 Source-repository head
     type:     darcs
-    location: https://patch-tag.com/r/komadori/OddWord
+    location: http://hub.darcs.net/komadori/OddWord
