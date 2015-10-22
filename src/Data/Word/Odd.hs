@@ -100,9 +100,9 @@ instance (Num a, Bits a, TypeNum n) => Bounded (OddWord a n) where
 instance (Enum a, Ord a, Num a, Bits a, TypeNum n) => Enum (OddWord a n) where
     succ x = x + 1
     pred x = x - 1
-    toEnum i | i >= 0 && fromIntegral i <= (owMask :: OddWord a n)
+    toEnum i | i >= 0 && fromIntegral i <= unOW (owMask :: OddWord a n)
              = OW $ toEnum i
-             | otherwise = error "OddWord: toEnum: Out of range."
+             | otherwise = error "OddWord: toEnum: Index out of bounds."
     fromEnum (OW x) = fromEnum x
     enumFrom x = enumFromTo x owMask
     enumFromThen x1 x2 = enumFromThenTo x1 x2 bound
