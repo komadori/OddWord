@@ -1,4 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP #-}
 
 module Main where
 
@@ -6,47 +6,56 @@ import System.Exit
 import Test.QuickCheck hiding ((.&.))
 import Test.QuickCheck.Gen
 import Data.Bits
+import Data.Maybe
 import Data.Word
 import Data.Word.Odd
 import Control.Monad
 
-data UFunc =
-    Add   Integer | Mul   Integer | Sub   Integer | SubR  Integer |
-    Div   Integer | Mod   Integer | Quot  Integer | Rem   Integer |
-    DivR  Integer | ModR  Integer | QuotR Integer | RemR  Integer |
-    Neg           | Abs           | Inv           | AddDigit      |
-    And   Integer | Or    Integer | Xor   Integer |
-    ClrB  Int     | SetB  Int     | InvB  Int     |
-    Shift Int     | Rot   Int     | PopCnt
+data UFunc
+    = Add   Integer | Mul   Integer | Sub   Integer | SubR  Integer
+    | Div   Integer | Mod   Integer | Quot  Integer | Rem   Integer
+    | DivR  Integer | ModR  Integer | QuotR Integer | RemR  Integer
+    | Neg           | Abs           | Inv           | AddDigit
+    | And   Integer | Or    Integer | Xor   Integer
+    | ClrB  Int     | SetB  Int     | InvB  Int
+    | Shift Int     | Rot   Int     | PopCnt
+#if MIN_VERSION_base(4,8,0)
+    | CntLZ         | CntTZ
+#endif
     deriving Show
 
 instance Arbitrary (UFunc) where
-    arbitrary = oneof [
-        choose (0, 0xffff) >>= return . Add,
-        choose (0, 0xffff) >>= return . Mul,
-        choose (0, 0xffff) >>= return . Sub,
-        choose (0, 0xffff) >>= return . SubR,
-        choose (0, 0xffff) >>= return . Div,
-        choose (0, 0xffff) >>= return . Mod,
-        choose (0, 0xffff) >>= return . Quot,
-        choose (0, 0xffff) >>= return . Rem,
-        choose (0, 0xffff) >>= return . DivR,
-        choose (0, 0xffff) >>= return . ModR,
-        choose (0, 0xffff) >>= return . QuotR,
-        choose (0, 0xffff) >>= return . RemR,
-        return Neg,
-        return Abs,
-        return Inv,
-        return AddDigit,
-        choose (0, 0xffff) >>= return . And,
-        choose (0, 0xffff) >>= return . Or,
-        choose (0, 0xffff) >>= return . Xor,
-        choose (0, 32) >>= return . ClrB,
-        choose (0, 32) >>= return . SetB,
-        choose (0, 32) >>= return . InvB,
-        choose (-32, 32) >>= return . Shift,
-        choose (-32, 32) >>= return . Rot,
-        return PopCnt]
+    arbitrary = oneof
+        [choose (0, 0xffff) >>= return . Add
+        ,choose (0, 0xffff) >>= return . Mul
+        ,choose (0, 0xffff) >>= return . Sub
+        ,choose (0, 0xffff) >>= return . SubR
+        ,choose (0, 0xffff) >>= return . Div
+        ,choose (0, 0xffff) >>= return . Mod
+        ,choose (0, 0xffff) >>= return . Quot
+        ,choose (0, 0xffff) >>= return . Rem
+        ,choose (0, 0xffff) >>= return . DivR
+        ,choose (0, 0xffff) >>= return . ModR
+        ,choose (0, 0xffff) >>= return . QuotR
+        ,choose (0, 0xffff) >>= return . RemR
+        ,return Neg
+        ,return Abs
+        ,return Inv
+        ,return AddDigit
+        ,choose (0, 0xffff) >>= return . And
+        ,choose (0, 0xffff) >>= return . Or
+        ,choose (0, 0xffff) >>= return . Xor
+        ,choose (0, 32) >>= return . ClrB
+        ,choose (0, 32) >>= return . SetB
+        ,choose (0, 32) >>= return . InvB
+        ,choose (-32, 32) >>= return . Shift
+        ,choose (-32, 32) >>= return . Rot
+        ,return PopCnt
+#if MIN_VERSION_base(4,8,0)
+        ,return CntLZ
+        ,return CntTZ
+#endif
+        ]
 
 safeDiv :: (Integral a, Bounded a) => a -> a -> a
 safeDiv d 0 = maxBound
@@ -101,27 +110,32 @@ verifyTestWord16 us =
 
 preDefWordLengths :: [Int]
 preDefWordLengths = [
-    bitSize (0 :: Word1), bitSize (0 :: Word2), bitSize (0 :: Word3),
-    bitSize (0 :: Word4), bitSize (0 :: Word5), bitSize (0 :: Word6),
-    bitSize (0 :: Word7), bitSize (0 :: Word8), bitSize (0 :: Word9),
-    bitSize (0 :: Word10), bitSize (0 :: Word11), bitSize (0 :: Word12),
-    bitSize (0 :: Word13), bitSize (0 :: Word14), bitSize (0 :: Word15),
-    bitSize (0 :: Word16), bitSize (0 :: Word17), bitSize (0 :: Word18),
-    bitSize (0 :: Word19), bitSize (0 :: Word20), bitSize (0 :: Word21),
-    bitSize (0 :: Word22), bitSize (0 :: Word23), bitSize (0 :: Word24),
-    bitSize (0 :: Word25), bitSize (0 :: Word26), bitSize (0 :: Word27),
-    bitSize (0 :: Word28), bitSize (0 :: Word29), bitSize (0 :: Word30),
-    bitSize (0 :: Word31), bitSize (0 :: Word32), bitSize (0 :: Word33),
-    bitSize (0 :: Word34), bitSize (0 :: Word35), bitSize (0 :: Word36),
-    bitSize (0 :: Word37), bitSize (0 :: Word38), bitSize (0 :: Word39),
-    bitSize (0 :: Word40), bitSize (0 :: Word41), bitSize (0 :: Word42),
-    bitSize (0 :: Word43), bitSize (0 :: Word44), bitSize (0 :: Word45),
-    bitSize (0 :: Word46), bitSize (0 :: Word47), bitSize (0 :: Word48),
-    bitSize (0 :: Word49), bitSize (0 :: Word50), bitSize (0 :: Word51),
-    bitSize (0 :: Word52), bitSize (0 :: Word53), bitSize (0 :: Word54),
-    bitSize (0 :: Word55), bitSize (0 :: Word56), bitSize (0 :: Word57),
-    bitSize (0 :: Word58), bitSize (0 :: Word59), bitSize (0 :: Word60),
-    bitSize (0 :: Word61), bitSize (0 :: Word62), bitSize (0 :: Word63)]
+    bits (0 :: Word1), bits (0 :: Word2), bits (0 :: Word3),
+    bits (0 :: Word4), bits (0 :: Word5), bits (0 :: Word6),
+    bits (0 :: Word7), bits (0 :: Word8), bits (0 :: Word9),
+    bits (0 :: Word10), bits (0 :: Word11), bits (0 :: Word12),
+    bits (0 :: Word13), bits (0 :: Word14), bits (0 :: Word15),
+    bits (0 :: Word16), bits (0 :: Word17), bits (0 :: Word18),
+    bits (0 :: Word19), bits (0 :: Word20), bits (0 :: Word21),
+    bits (0 :: Word22), bits (0 :: Word23), bits (0 :: Word24),
+    bits (0 :: Word25), bits (0 :: Word26), bits (0 :: Word27),
+    bits (0 :: Word28), bits (0 :: Word29), bits (0 :: Word30),
+    bits (0 :: Word31), bits (0 :: Word32), bits (0 :: Word33),
+    bits (0 :: Word34), bits (0 :: Word35), bits (0 :: Word36),
+    bits (0 :: Word37), bits (0 :: Word38), bits (0 :: Word39),
+    bits (0 :: Word40), bits (0 :: Word41), bits (0 :: Word42),
+    bits (0 :: Word43), bits (0 :: Word44), bits (0 :: Word45),
+    bits (0 :: Word46), bits (0 :: Word47), bits (0 :: Word48),
+    bits (0 :: Word49), bits (0 :: Word50), bits (0 :: Word51),
+    bits (0 :: Word52), bits (0 :: Word53), bits (0 :: Word54),
+    bits (0 :: Word55), bits (0 :: Word56), bits (0 :: Word57),
+    bits (0 :: Word58), bits (0 :: Word59), bits (0 :: Word60),
+    bits (0 :: Word61), bits (0 :: Word62), bits (0 :: Word63)]
+#if MIN_VERSION_base(4,8,0)
+    where bits n = fromMaybe 0 $ bitSizeMaybe n
+#else
+    where bits n = bitSize n
+#endif
 
 main :: IO ()
 main = do

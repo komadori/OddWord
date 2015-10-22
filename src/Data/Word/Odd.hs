@@ -1,4 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP #-}
 
 module Data.Word.Odd (
     -- * Odd Word Wrapper
@@ -136,7 +136,10 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
                            = OW $ complementBit x n
                            | otherwise = OW x
     testBit (OW x) n = testBit x n
-    bitSize _  = fromTypeNum (typeNum :: TypeNumBuilder n)
+    bitSize _ = fromTypeNum (typeNum :: TypeNumBuilder n)
+#if MIN_VERSION_base(4,7,0)
+    bitSizeMaybe _ = Just $ fromTypeNum (typeNum :: TypeNumBuilder n)
+#endif
     isSigned _ = False 
     shiftL (OW x) n = maskOW $ shiftL x n
     shiftR (OW x) n = OW $ shiftR x n
