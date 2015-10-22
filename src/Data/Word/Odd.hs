@@ -8,6 +8,9 @@ module Data.Word.Odd (
     TypeNum,
     One,
     Zero,
+#ifdef TYPE_LITS
+    Lit,
+#endif
 
     -- * Predefined Odd Words
     Word1, Word2, Word3, Word4, Word5, Word6, Word7,
@@ -23,6 +26,12 @@ module Data.Word.Odd (
 import Data.Bits
 import Data.Word
 import Data.Function
+
+#ifdef TYPE_LITS
+import Data.Word.Odd.TypeLits
+import Data.Proxy
+import GHC.TypeLits
+#endif
 
 -- | OddWord wraps the integer type specified in the first type parameter and
 -- exposes a subset of the available bits as an unsigned word. The number of
@@ -58,6 +67,12 @@ instance (TypeNum a) => TypeNum (One a) where
 instance (TypeNum a) => TypeNum (Zero a) where
     typeNum = let (TypeNumBuilder n m) = (typeNum :: TypeNumBuilder a)
               in TypeNumBuilder (n) (m+1)
+
+#ifdef TYPE_LITS
+instance (KnownNat a) => TypeNum (Lit a) where
+    typeNum = TypeNumBuilder n (finiteBitSize n - countLeadingZeros n)
+              where n = fromIntegral $ natVal (Proxy :: Proxy a)
+#endif
 
 pairOW :: (a, a) -> (OddWord a n, OddWord a n)
 pairOW = uncurry ((,) `on` OW)
