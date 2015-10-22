@@ -33,7 +33,7 @@ Test-Suite oddword-tests
     other-extensions: ScopedTypeVariables
     build-depends:
         base       >= 4.5 && < 5,
-        QuickCheck >= 2.4 && < 2.7,
+        QuickCheck >= 2.4 && < 2.9,
         OddWord    >= 1.0 && < 1.1
 
 Source-repository head
