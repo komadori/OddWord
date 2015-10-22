@@ -9,7 +9,9 @@ import Data.Bits
 import Data.Maybe
 import Data.Word
 import Data.Word.Odd
+import Control.Exception
 import Control.Monad
+import System.IO.Unsafe
 
 data UFunc
     = Add   Integer | Mul   Integer | Sub   Integer | SubR  Integer
@@ -22,6 +24,7 @@ data UFunc
 #if MIN_VERSION_base(4,8,0)
     | CntLZ         | CntTZ
 #endif
+    | AdjEnum Int Integer
     deriving Show
 
 instance Arbitrary (UFunc) where
@@ -55,6 +58,7 @@ instance Arbitrary (UFunc) where
         ,return CntLZ
         ,return CntTZ
 #endif
+        ,AdjEnum <$> choose (-70000, 70000) <*> choose (0, 0xffff)
         ]
 
 safeDiv :: (Integral a, Bounded a) => a -> a -> a
@@ -73,7 +77,12 @@ safeRem :: (Integral a) => a -> a -> a
 safeRem d 0 = 0
 safeRem d n = rem d n
 
-fromUFunc :: (Integral a, Bounded a, Bits a, Read a, Show a) => UFunc -> a -> a
+safeToEnum :: (Enum a) => a -> Int -> a
+safeToEnum def x =
+    unsafePerformIO (evaluate (toEnum x) `catch` \(ErrorCall _) -> return def)
+
+fromUFunc :: (Integral a, Bounded a, Enum a, FiniteBits a, Read a, Show a) =>
+    UFunc -> a -> a
 fromUFunc (Add   i) x = x + (fromInteger i)
 fromUFunc (Mul   i) x = x * (fromInteger i)
 fromUFunc (Sub   i) x = x - (fromInteger i)
@@ -99,6 +108,7 @@ fromUFunc (InvB  n) x = complementBit x n
 fromUFunc (Shift n) x = shift x n
 fromUFunc (Rot   n) x = rotate x n
 fromUFunc  PopCnt   x = fromIntegral $ popCount x
+fromUFunc (AdjEnum i def) x = safeToEnum (fromIntegral def) . (+i) $ fromEnum x
 
 type TestWord16 = OddWord Word32 (One (Zero (Zero (Zero (Zero ())))))
 
