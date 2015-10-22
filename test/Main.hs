@@ -108,6 +108,10 @@ fromUFunc (InvB  n) x = complementBit x n
 fromUFunc (Shift n) x = shift x n
 fromUFunc (Rot   n) x = rotate x n
 fromUFunc  PopCnt   x = fromIntegral $ popCount x
+#if MIN_VERSION_base(4,8,0)
+fromUFunc  CntLZ    x = fromIntegral $ countLeadingZeros x
+fromUFunc  CntTZ    x = fromIntegral $ countTrailingZeros x
+#endif
 fromUFunc (AdjEnum i def) x = safeToEnum (fromIntegral def) . (+i) $ fromEnum x
 
 type TestWord16 = OddWord Word32 (One (Zero (Zero (Zero (Zero ())))))

@@ -153,6 +153,17 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
               w  = fromTypeNum (typeNum :: TypeNumBuilder n)
     popCount (OW x) = popCount x
 
+#if MIN_VERSION_base(4,7,0)
+instance (Num a, FiniteBits a, TypeNum n) => FiniteBits (OddWord a n) where
+    finiteBitSize _ = fromTypeNum (typeNum :: TypeNumBuilder n) 
+#if MIN_VERSION_base(4,8,0)
+    countLeadingZeros (OW x) = countLeadingZeros x +
+        fromTypeNum (typeNum :: TypeNumBuilder n) - finiteBitSize x
+    countTrailingZeros (OW x) = min (countTrailingZeros x) $
+        fromTypeNum (typeNum :: TypeNumBuilder n)
+#endif
+#endif
+
 type Word1  = OddWord Word8             (One  ())
 type Word2  = OddWord Word8        (One (Zero ()))
 type Word3  = OddWord Word8        (One (One  ()))
