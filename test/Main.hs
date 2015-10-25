@@ -91,7 +91,11 @@ safeToEnum def x =
     unsafePerformIO (evaluate (toEnum x) `catch` \(ErrorCall _) -> return def)
 
 -- | Interpreter for executing 'UFunc' values.
+#if MIN_VERSION_base(4,7,0)
 fromUFunc :: (Integral a, Bounded a, Enum a, FiniteBits a, Read a, Show a) =>
+#else
+fromUFunc :: (Integral a, Bounded a, Enum a, Bits a, Read a, Show a) =>
+#endif
     UFunc -> a -> a
 fromUFunc (Add   i) x = x + (fromInteger i)
 fromUFunc (Mul   i) x = x * (fromInteger i)
