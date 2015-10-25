@@ -13,6 +13,7 @@ import Control.Exception
 import Control.Monad
 import System.IO.Unsafe
 
+-- | Represents a range of unary functions which can be applied to a word.
 data UFunc
     = Add   Integer | Mul   Integer | Sub   Integer | SubR  Integer
     | Div   Integer | Mod   Integer | Quot  Integer | Rem   Integer
@@ -64,26 +65,32 @@ instance Arbitrary (UFunc) where
         ,AdjEnum <$> choose (-0x1ffff, 0x1ffff) <*> choose (0, 0xffff)
         ]
 
+-- | Total wrapper for 'div'.
 safeDiv :: (Integral a, Bounded a) => a -> a -> a
 safeDiv d 0 = maxBound
 safeDiv d n = div d n
 
+-- | Total wrapper for 'mod'.
 safeMod :: (Integral a) => a -> a -> a
 safeMod d 0 = 0
 safeMod d n = mod d n
 
+-- | Total wrapper for 'quot'.
 safeQuot :: (Integral a, Bounded a) => a -> a -> a
 safeQuot d 0 = maxBound
 safeQuot d n = quot d n
 
+-- | Total wrapper for 'rem'.
 safeRem :: (Integral a) => a -> a -> a
 safeRem d 0 = 0
 safeRem d n = rem d n
 
+-- | Total wrapper for 'toEnum'.
 safeToEnum :: (Enum a) => a -> Int -> a
 safeToEnum def x =
     unsafePerformIO (evaluate (toEnum x) `catch` \(ErrorCall _) -> return def)
 
+-- | Interpreter for executing 'UFunc' values.
 fromUFunc :: (Integral a, Bounded a, Enum a, FiniteBits a, Read a, Show a) =>
     UFunc -> a -> a
 fromUFunc (Add   i) x = x + (fromInteger i)
@@ -120,14 +127,18 @@ fromUFunc  CntTZ    x = fromIntegral $ countTrailingZeros x
 #endif
 fromUFunc (AdjEnum i def) x = safeToEnum (fromIntegral def) . (+i) $ fromEnum x
 
+-- | A 16-bit word underlied by a 32-bit word.
 type TestWord16 = OddWord Word32 (One (Zero (Zero (Zero (Zero ())))))
 
+-- | Checks that computations using real and simulated 16-bit words produce
+-- the same result for a series of 'UFunc's.
 verifyTestWord16 :: [UFunc] -> Bool
 verifyTestWord16 us =
     let refFn = foldr (.) id $ map fromUFunc us :: Word16 -> Word16
         tstFn = foldr (.) id $ map fromUFunc us :: TestWord16 -> TestWord16
     in toInteger (refFn 0) == toInteger (tstFn 0)
 
+-- | List of bit lengths for all words up to 63-bits.
 preDefWordLengths :: [Int]
 preDefWordLengths = [
     bits (0 :: Word1), bits (0 :: Word2), bits (0 :: Word3),
