@@ -49,12 +49,12 @@ Test-Suite oddword-tests-typelits
     hs-source-dirs:   test
     main-is:          TypeLitsTest.hs
     default-language: Haskell2010
-    other-extensions: DataKinds
     if flag(TypeLitsSupport) && impl(ghc >= 7.8)
         buildable: True
         build-depends:
             base       >= 4.5 && < 5,
             OddWord    >= 1.0 && < 1.1
+        other-extensions: DataKinds
     else
         buildable: False
 
