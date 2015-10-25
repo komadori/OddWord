@@ -90,8 +90,7 @@ instance (TypeNum a) => TypeNum (Zero a) where
 
 #ifdef TYPE_LITS
 instance (KnownNat a) => TypeNum (Lit a) where
-    typeNum = TypeNumBuilder n (finiteBitSize n - countLeadingZeros n)
-              where n = fromIntegral $ natVal (Proxy :: Proxy a)
+    typeNum = TypeNumBuilder (fromIntegral $ natVal (Proxy :: Proxy a)) 0
 #endif
 
 -- | Wraps both parts of a homogenous pair with the OddWord constructor.
