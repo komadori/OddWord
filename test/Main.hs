@@ -9,8 +9,8 @@ import Data.Bits
 import Data.Maybe
 import Data.Word
 import Data.Word.Odd
+import Control.Applicative
 import Control.Exception
-import Control.Monad
 import System.IO.Unsafe
 
 -- | Represents a range of unary functions which can be applied to a word.
