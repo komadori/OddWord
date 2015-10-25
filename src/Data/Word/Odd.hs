@@ -113,6 +113,10 @@ mapFst f xs = map (\(a,c) -> (f a,c)) xs
 --
 -- Instances for the OddWord type
 --
+-- The instances largely forward operations to the underlying integer type
+-- while wrapping and unwrapping the newtype, and masking or otherwise
+-- adjusting the results as appropriate for the desired bit length of the word.
+--
 
 instance (Show a) => Show (OddWord a n) where
     showsPrec p (OW x) s = showsPrec p x s
