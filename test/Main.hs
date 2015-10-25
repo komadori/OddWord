@@ -29,36 +29,36 @@ data UFunc
 
 instance Arbitrary (UFunc) where
     arbitrary = oneof
-        [choose (0, 0xffff) >>= return . Add
-        ,choose (0, 0xffff) >>= return . Mul
-        ,choose (0, 0xffff) >>= return . Sub
-        ,choose (0, 0xffff) >>= return . SubR
-        ,choose (0, 0xffff) >>= return . Div
-        ,choose (0, 0xffff) >>= return . Mod
-        ,choose (0, 0xffff) >>= return . Quot
-        ,choose (0, 0xffff) >>= return . Rem
-        ,choose (0, 0xffff) >>= return . DivR
-        ,choose (0, 0xffff) >>= return . ModR
-        ,choose (0, 0xffff) >>= return . QuotR
-        ,choose (0, 0xffff) >>= return . RemR
+        [Add   <$> choose (0, 0xffff)
+        ,Mul   <$> choose (0, 0xffff)
+        ,Sub   <$> choose (0, 0xffff)
+        ,SubR  <$> choose (0, 0xffff)
+        ,Div   <$> choose (0, 0xffff)
+        ,Mod   <$> choose (0, 0xffff)
+        ,Quot  <$> choose (0, 0xffff)
+        ,Rem   <$> choose (0, 0xffff)
+        ,DivR  <$> choose (0, 0xffff)
+        ,ModR  <$> choose (0, 0xffff)
+        ,QuotR <$> choose (0, 0xffff)
+        ,RemR  <$> choose (0, 0xffff)
         ,return Neg
         ,return Abs
         ,return Inv
         ,return AddDigit
-        ,choose (0, 0xffff) >>= return . And
-        ,choose (0, 0xffff) >>= return . Or
-        ,choose (0, 0xffff) >>= return . Xor
-        ,choose (0, 32) >>= return . ClrB
-        ,choose (0, 32) >>= return . SetB
-        ,choose (0, 32) >>= return . InvB
-        ,choose (-32, 32) >>= return . Shift
-        ,choose (-32, 32) >>= return . Rot
+        ,And   <$> choose (0, 0xffff)
+        ,Or    <$> choose (0, 0xffff)
+        ,Xor   <$> choose (0, 0xffff)
+        ,ClrB  <$> choose (-32, 32)
+        ,SetB  <$> choose (-32, 32)
+        ,InvB  <$> choose (-32, 32)
+        ,Shift <$> choose (-32, 32)
+        ,Rot   <$> choose (-32, 32)
         ,return PopCnt
 #if MIN_VERSION_base(4,8,0)
         ,return CntLZ
         ,return CntTZ
 #endif
-        ,AdjEnum <$> choose (-70000, 70000) <*> choose (0, 0xffff)
+        ,AdjEnum <$> choose (-0x1ffff, 0x1ffff) <*> choose (0, 0xffff)
         ]
 
 safeDiv :: (Integral a, Bounded a) => a -> a -> a
