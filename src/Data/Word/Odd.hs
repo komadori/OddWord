@@ -33,11 +33,31 @@ import Data.Proxy
 import GHC.TypeLits
 #endif
 
--- | OddWord wraps the integer type specified in the first type parameter and
--- exposes a subset of the available bits as an unsigned word. The number of
--- bits to expose is encoded into the second type parameter.
+-- | 'OddWord' provides a range of unsigned integer word types with a length in
+-- bits encoded at the type level. The first type parameter @a@ must supply an
+-- integer type which can hold at least as many bits as required for the
+-- 'OddWord'. The second type paramter @n@ then encodes the length in bits
+-- which the 'OddWord' will be restricted to.
 --
--- The predefined word types provided by this module give some examples.
+-- The length of the 'OddWord' can be encoded as a string of binary digits
+-- using the 'One', 'Zero', and @()@ type constructors. The outermost
+-- constructor specifies the most significant digit and each subsequent digit
+-- is nested inside the previous type constructor via its type parameter. Hence,
+-- the encoding is terminated by the @()@ type constructor. For example, the
+-- number 4 would be expressed as: @One (Zero (Zero ()))@.
+--
+-- Alternatively, if the compiler supports type-level naturals then these can
+-- be used via the 'Lit' type constructor. For example, the number 4 can be
+-- expressed as: @Lit 4@.
+--
+-- To supply a complete example, a 4-bit integer type could be built from a
+-- 'Word8' and specified as either @OddWord Word8 (One (Zero (Zero ())))@ or
+-- @OddWord Word8 (Lit 4)@.
+--
+-- The behaviour of an 'OddWord' is undefined if the specified length is
+-- greater than that of the underlying integer type. The behaviour is also
+-- undefined if the specified length is equal to that of the underlying integer
+-- type and that type is also signed.
 newtype OddWord a n = OW {unOW :: a} deriving (Eq, Ord)
 
 data TypeNumBuilder a = TypeNumBuilder Int Int
@@ -50,11 +70,11 @@ class TypeNum a where
     typeNum :: TypeNumBuilder a
 
 -- | Represents a type-level number with a leading one bit followed by the
--- string of digits specified by a.
+-- string of digits specified by @a@.
 data One a
 
 -- | Represents a type-level number with a placeholder zero bit followed by the
--- string of digits specified by a.
+-- string of digits specified by @a@.
 data Zero a
 
 instance TypeNum () where
@@ -74,17 +94,25 @@ instance (KnownNat a) => TypeNum (Lit a) where
               where n = fromIntegral $ natVal (Proxy :: Proxy a)
 #endif
 
+-- | Wraps both parts of a homogenous pair with the OddWord constructor.
 pairOW :: (a, a) -> (OddWord a n, OddWord a n)
 pairOW = uncurry ((,) `on` OW)
 
+-- | An OddWord with all the bits set, used for masking.
 owMask :: forall a n. (Num a, Bits a, TypeNum n) => OddWord a n
-owMask = OW $ (flip (-) 1) $ bit $ fromTypeNum (typeNum :: TypeNumBuilder n)
+owMask = OW . (flip (-) 1) . bit $ fromTypeNum (typeNum :: TypeNumBuilder n)
 
+-- | Smart constructor for OddWords which masks off the unused upper bits.
 maskOW :: forall a n. (Num a, Bits a, TypeNum n) => a -> OddWord a n
 maskOW w = OW $ w .&. unOW (owMask :: OddWord a n)
 
+-- | Applies a function to the first component of each pair in a list thereof.
 mapFst :: (a -> b) -> [(a, c)] -> [(b, c)]
 mapFst f xs = map (\(a,c) -> (f a,c)) xs
+
+--
+-- Instances for the OddWord type
+--
 
 instance (Show a) => Show (OddWord a n) where
     showsPrec p (OW x) s = showsPrec p x s
@@ -178,6 +206,10 @@ instance (Num a, FiniteBits a, TypeNum n) => FiniteBits (OddWord a n) where
         fromTypeNum (typeNum :: TypeNumBuilder n)
 #endif
 #endif
+
+--
+-- Predefined Odd Words
+--
 
 type Word1  = OddWord Word8             (One  ())
 type Word2  = OddWord Word8        (One (Zero ()))
