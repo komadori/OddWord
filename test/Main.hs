@@ -18,9 +18,9 @@ data UFunc
     | Div   Integer | Mod   Integer | Quot  Integer | Rem   Integer
     | DivR  Integer | ModR  Integer | QuotR Integer | RemR  Integer
     | Neg           | Abs           | Inv           | AddDigit
-    | And   Integer | Or    Integer | Xor   Integer
-    | ClrB  Int     | SetB  Int     | InvB  Int
-    | Shift Int     | Rot   Int     | PopCnt
+    | From  Integer | And   Integer | Or    Integer | Xor   Integer
+    | TstB  Int     | ClrB  Int     | SetB  Int     | InvB  Int
+    | FromB Int     | Shift Int     | Rot   Int     | PopCnt
 #if MIN_VERSION_base(4,8,0)
     | CntLZ         | CntTZ
 #endif
@@ -45,12 +45,15 @@ instance Arbitrary (UFunc) where
         ,return Abs
         ,return Inv
         ,return AddDigit
+        ,From  <$> arbitrary
         ,And   <$> choose (0, 0xffff)
         ,Or    <$> choose (0, 0xffff)
         ,Xor   <$> choose (0, 0xffff)
+        ,TstB  <$> choose (-32, 32)
         ,ClrB  <$> choose (-32, 32)
         ,SetB  <$> choose (-32, 32)
         ,InvB  <$> choose (-32, 32)
+        ,FromB <$> choose (-32, 32)
         ,Shift <$> choose (-32, 32)
         ,Rot   <$> choose (-32, 32)
         ,return PopCnt
@@ -98,13 +101,16 @@ fromUFunc (RemR  i) x = safeRem  (fromInteger i) x
 fromUFunc  Neg      x = negate x
 fromUFunc  Abs      x = abs x
 fromUFunc  Inv      x = complement x
+fromUFunc (From i)  _ = fromInteger i
 fromUFunc  AddDigit x = read . ('1':) $ show x
 fromUFunc (And   i) x = x .&. (fromInteger i)
 fromUFunc (Or    i) x = x .|. (fromInteger i)
 fromUFunc (Xor   i) x = xor x (fromInteger i)
+fromUFunc (TstB  n) x = fromIntegral $ fromEnum $ testBit x n
 fromUFunc (ClrB  n) x = clearBit x n
 fromUFunc (SetB  n) x = setBit x n
 fromUFunc (InvB  n) x = complementBit x n
+fromUFunc (FromB n) _ = bit n
 fromUFunc (Shift n) x = shift x n
 fromUFunc (Rot   n) x = rotate x n
 fromUFunc  PopCnt   x = fromIntegral $ popCount x
