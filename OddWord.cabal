@@ -31,7 +31,6 @@ Library
     if flag(TypeLitsSupport) && impl(ghc >= 7.8)
         cpp-options: -DTYPE_LITS
         other-modules: Data.Word.Odd.TypeLits
-        other-extensions: DataKinds KindSignatures
 
 Test-Suite oddword-tests
     type:             exitcode-stdio-1.0
@@ -54,7 +53,6 @@ Test-Suite oddword-tests-typelits
         build-depends:
             base       >= 4.5 && < 5,
             OddWord    >= 1.0 && < 1.1
-        other-extensions: DataKinds
     else
         buildable: False
 
