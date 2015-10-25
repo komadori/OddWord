@@ -2,6 +2,7 @@
 
 module Main where
 
+import Prelude hiding (catch)
 import System.Exit
 import Test.QuickCheck hiding ((.&.))
 import Test.QuickCheck.Gen
