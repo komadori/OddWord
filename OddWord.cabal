@@ -40,8 +40,8 @@ Test-Suite oddword-tests
     other-extensions: ScopedTypeVariables CPP
     build-depends:
         base       >= 4.5 && < 5,
-        QuickCheck >= 2.4 && < 2.9,
-        OddWord    >= 1.0 && < 1.1
+        QuickCheck >= 2.4 && < 2.12,
+        OddWord
 
 Test-Suite oddword-tests-typelits
     type:             exitcode-stdio-1.0
@@ -52,7 +52,7 @@ Test-Suite oddword-tests-typelits
         buildable: True
         build-depends:
             base       >= 4.5 && < 5,
-            OddWord    >= 1.0 && < 1.1
+            OddWord
     else
         buildable: False
 
