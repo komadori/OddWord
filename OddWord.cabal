@@ -10,7 +10,7 @@ category:           Data
 stability:          Stable
 cabal-version:      >= 1.10
 build-type:         Simple
-extra-source-files: test/*.hs bench/*.hs NEWS
+extra-source-files: test/*.hs bench/*.hs CHANGELOG
 homepage:           http://www.gekkou.co.uk/
 description:
     Provdes the 'OddWord' type, which wraps an existing integer type and

@@ -5,7 +5,8 @@ release-1.0.1.0 - 2015.10.25
   * Added optional support for GHC type-level literals.
   * Added FiniteBits instance.
   * Added more test coverage.
-  * Fixed bug in toEnum function and extended test suite. (Thanks to Pasqualino     "Titto" Assini)
+  * Fixed bug in toEnum function and extended test suite. (Thanks to Pasqualino
+    "Titto" Assini)
   * Fixed warnings when compiling test suite with base-4.7 (GHC 7.8).
   * Relaxed QuickCheck version constraint.
 
