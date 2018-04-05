@@ -1,5 +1,11 @@
 OddWord - Release History
 
+release-1.0.1.1 - 2018.04.05
+
+  * Added criterion benchmark
+  * Renamed NEWS file to CHANGELOG.
+  * Relaxed QuickCheck version constraint.
+
 release-1.0.1.0 - 2015.10.25
 
   * Added optional support for GHC type-level literals.

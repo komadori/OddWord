@@ -1,8 +1,8 @@
 name:               OddWord
-version:            1.0.1.0
+version:            1.0.1.1
 license:            BSD3
 license-file:       LICENSE
-copyright:          (c) 2011-2015 Robin KAY
+copyright:          (c) 2011-2018 Robin KAY
 author:             Robin KAY
 maintainer:         Robin KAY <komadori@gekkou.co.uk>
 synopsis:           Provides a wrapper for deriving word types with fewer bits.
