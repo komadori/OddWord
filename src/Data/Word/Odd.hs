@@ -1,4 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP, DeriveDataTypeable #-}
 
 module Data.Word.Odd (
     -- * Odd Word Wrapper
@@ -26,6 +26,7 @@ module Data.Word.Odd (
 import Data.Bits
 import Data.Word
 import Data.Function
+import Data.Typeable
 
 #ifdef TYPE_LITS
 import Data.Word.Odd.TypeLits
@@ -58,7 +59,7 @@ import GHC.TypeLits
 -- greater than that of the underlying integer type. The behaviour is also
 -- undefined if the specified length is equal to that of the underlying integer
 -- type and that type is also signed.
-newtype OddWord a n = OW {unOW :: a} deriving (Eq, Ord)
+newtype OddWord a n = OW {unOW :: a} deriving (Eq, Ord, Typeable)
 
 data TypeNumBuilder a = TypeNumBuilder Int Int
 
@@ -71,11 +72,11 @@ class TypeNum a where
 
 -- | Represents a type-level number with a leading one bit followed by the
 -- string of digits specified by @a@.
-data One a
+data One a deriving Typeable
 
 -- | Represents a type-level number with a placeholder zero bit followed by the
 -- string of digits specified by @a@.
-data Zero a
+data Zero a deriving Typeable
 
 instance TypeNum () where
     typeNum = TypeNumBuilder 0 0
