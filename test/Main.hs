@@ -51,13 +51,13 @@ instance Arbitrary (UFunc) where
         ,And   <$> choose (0, 0xffff)
         ,Or    <$> choose (0, 0xffff)
         ,Xor   <$> choose (0, 0xffff)
-        ,TstB  <$> choose (-32, 32)
-        ,ClrB  <$> choose (-32, 32)
-        ,SetB  <$> choose (-32, 32)
-        ,InvB  <$> choose (-32, 32)
-        ,FromB <$> choose (-32, 32)
-        ,Shift <$> choose (-32, 32)
-        ,Rot   <$> choose (-32, 32)
+        ,TstB  <$> choose (0, 32)
+        ,ClrB  <$> choose (0, 32)
+        ,SetB  <$> choose (0, 32)
+        ,InvB  <$> choose (0, 32)
+        ,FromB <$> choose (0, 32)
+        ,Shift <$> choose (0, 32)
+        ,Rot   <$> choose (0, 32)
         ,return PopCnt
 #if MIN_VERSION_base(4,8,0)
         ,return CntLZ
@@ -132,8 +132,8 @@ fromUFunc  CntTZ    x = fromIntegral $ countTrailingZeros x
 #endif
 fromUFunc (AdjEnum i def) x = safeToEnum (fromIntegral def) . (+i) $ fromEnum x
 
--- | A 16-bit word underlied by a 32-bit word.
-type TestWord16 = OddWord Word32 (One (Zero (Zero (Zero (Zero ())))))
+-- | A 16-bit word underlied by a 64-bit word.
+type TestWord16 = OddWord Word64 (One (Zero (Zero (Zero (Zero ())))))
 
 -- | Checks that computations using real and simulated 16-bit words produce
 -- the same result for a series of 'UFunc's.
