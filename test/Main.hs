@@ -1,4 +1,5 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
+             DataKinds, KindSignatures #-}
 
 module Main where
 
@@ -92,11 +93,7 @@ safeToEnum def x =
     unsafePerformIO (evaluate (toEnum x) `catch` \(ErrorCall _) -> return def)
 
 -- | Interpreter for executing 'UFunc' values.
-#if MIN_VERSION_base(4,7,0)
 fromUFunc :: (Integral a, Bounded a, Enum a, FiniteBits a, Read a, Show a) =>
-#else
-fromUFunc :: (Integral a, Bounded a, Enum a, Bits a, Read a, Show a) =>
-#endif
     UFunc -> a -> a
 fromUFunc (Add   i) x = x + (fromInteger i)
 fromUFunc (Mul   i) x = x * (fromInteger i)
@@ -167,20 +164,29 @@ preDefWordLengths = [
     bits (0 :: Word55), bits (0 :: Word56), bits (0 :: Word57),
     bits (0 :: Word58), bits (0 :: Word59), bits (0 :: Word60),
     bits (0 :: Word61), bits (0 :: Word62), bits (0 :: Word63)]
-#if MIN_VERSION_base(4,8,0)
-    where bits n = fromMaybe 0 $ bitSizeMaybe n
-#else
-    where bits n = bitSize n
-#endif
+    where bits n = finiteBitSize n
 
-main :: IO ()
-main = do
-    -- Verify lengths of predefined odd word synonyms
+typeLitWordLengths :: [Int]
+typeLitWordLengths = [
+    finiteBitSize (0 :: OddWord Word8 (Lit 1)),
+    finiteBitSize (0 :: OddWord Word8 (Lit 2)),
+    finiteBitSize (0 :: OddWord Word8 (Lit 3)),
+    finiteBitSize (0 :: OddWord Word8 (Lit 4))]
+
+checkWordLengths :: [Int] -> IO ()
+checkWordLengths xs =
     mapM_ (\(u,v) -> putStrLn (
         showString "Error: Word" . shows u . showString " has length " $
             shows v ".") >> exitFailure) $
         map fst $ filter snd $ map (\t -> (t,uncurry (/=) t)) $
-        zip [1..] preDefWordLengths
+        zip [1..] xs
+
+main :: IO ()
+main = do
+    -- Verify lengths of predefined odd word synonyms
+    checkWordLengths preDefWordLengths
+    -- Verify lengths of odd words defined using GHC type-level literals
+    checkWordLengths typeLitWordLengths
     -- Verify correctness of operations on a test word type
     r <- quickCheckWithResult stdArgs {maxSuccess = 1000} verifyTestWord16
     case r of

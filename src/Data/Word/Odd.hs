@@ -1,4 +1,5 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP, DeriveDataTypeable #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
+             DeriveDataTypeable, DataKinds, KindSignatures #-}
 
 module Data.Word.Odd (
     -- * Odd Word Wrapper
@@ -8,9 +9,7 @@ module Data.Word.Odd (
     TypeNum,
     One,
     Zero,
-#ifdef TYPE_LITS
     Lit,
-#endif
 
     -- * Predefined Odd Words
     Word1, Word2, Word3, Word4, Word5, Word6, Word7,
@@ -24,15 +23,11 @@ module Data.Word.Odd (
 ) where
 
 import Data.Bits
+import Data.Proxy
 import Data.Word
 import Data.Function
 import Data.Typeable
-
-#ifdef TYPE_LITS
-import Data.Word.Odd.TypeLits
-import Data.Proxy
 import GHC.TypeLits
-#endif
 
 -- | 'OddWord' provides a range of unsigned integer word types with a length in
 -- bits encoded at the type level. The first type parameter @a@ must supply an
@@ -78,6 +73,10 @@ data One a deriving Typeable
 -- string of digits specified by @a@.
 data Zero a deriving Typeable
 
+-- | Converts a native GHC type-level natural into one usable by this library.
+-- This requires the @DataKinds@ extension.
+data Lit :: Nat -> * deriving Typeable
+
 instance TypeNum () where
     typeNum = TypeNumBuilder 0 0
 
@@ -89,10 +88,8 @@ instance (TypeNum a) => TypeNum (Zero a) where
     typeNum = let (TypeNumBuilder n m) = (typeNum :: TypeNumBuilder a)
               in TypeNumBuilder (n) (m+1)
 
-#ifdef TYPE_LITS
 instance (KnownNat a) => TypeNum (Lit a) where
     typeNum = TypeNumBuilder (fromIntegral $ natVal (Proxy :: Proxy a)) 0
-#endif
 
 -- | Wraps both parts of a homogenous pair with the OddWord constructor.
 pairOW :: (a, a) -> (OddWord a n, OddWord a n)
@@ -184,9 +181,7 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
                            | otherwise = OW x
     testBit (OW x) n = testBit x n
     bitSize _ = fromTypeNum (typeNum :: TypeNumBuilder n)
-#if MIN_VERSION_base(4,7,0)
     bitSizeMaybe _ = Just $ fromTypeNum (typeNum :: TypeNumBuilder n)
-#endif
     isSigned _ = False 
     shiftL (OW x) n = maskOW $ shiftL x n
     shiftR (OW x) n = OW $ shiftR x n
@@ -200,7 +195,6 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
               w  = fromTypeNum (typeNum :: TypeNumBuilder n)
     popCount (OW x) = popCount x
 
-#if MIN_VERSION_base(4,7,0)
 instance (Num a, FiniteBits a, TypeNum n) => FiniteBits (OddWord a n) where
     finiteBitSize _ = fromTypeNum (typeNum :: TypeNumBuilder n) 
 #if MIN_VERSION_base(4,8,0)
@@ -208,7 +202,6 @@ instance (Num a, FiniteBits a, TypeNum n) => FiniteBits (OddWord a n) where
         fromTypeNum (typeNum :: TypeNumBuilder n) - finiteBitSize x
     countTrailingZeros (OW x) = min (countTrailingZeros x) $
         fromTypeNum (typeNum :: TypeNumBuilder n)
-#endif
 #endif
 
 --
