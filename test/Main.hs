@@ -1,144 +1,18 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
-             DataKinds, KindSignatures #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP, DataKinds #-}
 
 module Main where
 
-import Prelude hiding (catch)
-import System.Exit
-import Test.QuickCheck hiding ((.&.))
-import Test.QuickCheck.Gen
 import Data.Bits
 import Data.Maybe
 import Data.Word
 import Data.Word.Odd
-import Control.Applicative
-import Control.Exception
-import System.IO.Unsafe
+import Data.Proxy
+import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
 
--- | Represents a range of unary functions which can be applied to a word.
-data UFunc
-    = Add   Integer | Mul   Integer | Sub   Integer | SubR  Integer
-    | Div   Integer | Mod   Integer | Quot  Integer | Rem   Integer
-    | DivR  Integer | ModR  Integer | QuotR Integer | RemR  Integer
-    | Neg           | Abs           | Inv           | AddDigit
-    | From  Integer | And   Integer | Or    Integer | Xor   Integer
-    | TstB  Int     | ClrB  Int     | SetB  Int     | InvB  Int
-    | FromB Int     | Shift Int     | Rot   Int     | PopCnt
-#if MIN_VERSION_base(4,8,0)
-    | CntLZ         | CntTZ
-#endif
-    | AdjEnum Int Integer
-    deriving Show
-
-instance Arbitrary (UFunc) where
-    arbitrary = oneof
-        [Add   <$> choose (0, 0xffff)
-        ,Mul   <$> choose (0, 0xffff)
-        ,Sub   <$> choose (0, 0xffff)
-        ,SubR  <$> choose (0, 0xffff)
-        ,Div   <$> choose (0, 0xffff)
-        ,Mod   <$> choose (0, 0xffff)
-        ,Quot  <$> choose (0, 0xffff)
-        ,Rem   <$> choose (0, 0xffff)
-        ,DivR  <$> choose (0, 0xffff)
-        ,ModR  <$> choose (0, 0xffff)
-        ,QuotR <$> choose (0, 0xffff)
-        ,RemR  <$> choose (0, 0xffff)
-        ,return Neg
-        ,return Abs
-        ,return Inv
-        ,return AddDigit
-        ,From  <$> arbitrary
-        ,And   <$> choose (0, 0xffff)
-        ,Or    <$> choose (0, 0xffff)
-        ,Xor   <$> choose (0, 0xffff)
-        ,TstB  <$> choose (0, 32)
-        ,ClrB  <$> choose (0, 32)
-        ,SetB  <$> choose (0, 32)
-        ,InvB  <$> choose (0, 32)
-        ,FromB <$> choose (0, 32)
-        ,Shift <$> choose (0, 32)
-        ,Rot   <$> choose (0, 32)
-        ,return PopCnt
-#if MIN_VERSION_base(4,8,0)
-        ,return CntLZ
-        ,return CntTZ
-#endif
-        ,AdjEnum <$> choose (-0x1ffff, 0x1ffff) <*> choose (0, 0xffff)
-        ]
-
--- | Total wrapper for 'div'.
-safeDiv :: (Integral a, Bounded a) => a -> a -> a
-safeDiv d 0 = maxBound
-safeDiv d n = div d n
-
--- | Total wrapper for 'mod'.
-safeMod :: (Integral a) => a -> a -> a
-safeMod d 0 = 0
-safeMod d n = mod d n
-
--- | Total wrapper for 'quot'.
-safeQuot :: (Integral a, Bounded a) => a -> a -> a
-safeQuot d 0 = maxBound
-safeQuot d n = quot d n
-
--- | Total wrapper for 'rem'.
-safeRem :: (Integral a) => a -> a -> a
-safeRem d 0 = 0
-safeRem d n = rem d n
-
--- | Total wrapper for 'toEnum'.
-safeToEnum :: (Enum a) => a -> Int -> a
-safeToEnum def x =
-    unsafePerformIO (evaluate (toEnum x) `catch` \(ErrorCall _) -> return def)
-
--- | Interpreter for executing 'UFunc' values.
-fromUFunc :: (Integral a, Bounded a, Enum a, FiniteBits a, Read a, Show a) =>
-    UFunc -> a -> a
-fromUFunc (Add   i) x = x + (fromInteger i)
-fromUFunc (Mul   i) x = x * (fromInteger i)
-fromUFunc (Sub   i) x = x - (fromInteger i)
-fromUFunc (SubR  i) x = (fromInteger i) - x
-fromUFunc (Div   i) x = safeDiv  x (fromInteger i)
-fromUFunc (Mod   i) x = safeMod  x (fromInteger i)
-fromUFunc (Quot  i) x = safeQuot x (fromInteger i)
-fromUFunc (Rem   i) x = safeRem  x (fromInteger i)
-fromUFunc (DivR  i) x = safeDiv  (fromInteger i) x
-fromUFunc (ModR  i) x = safeMod  (fromInteger i) x
-fromUFunc (QuotR i) x = safeQuot (fromInteger i) x
-fromUFunc (RemR  i) x = safeRem  (fromInteger i) x
-fromUFunc  Neg      x = negate x
-fromUFunc  Abs      x = abs x
-fromUFunc  Inv      x = complement x
-fromUFunc (From i)  _ = fromInteger i
-fromUFunc  AddDigit x = read . ('1':) $ show x
-fromUFunc (And   i) x = x .&. (fromInteger i)
-fromUFunc (Or    i) x = x .|. (fromInteger i)
-fromUFunc (Xor   i) x = xor x (fromInteger i)
-fromUFunc (TstB  n) x = fromIntegral $ fromEnum $ testBit x n
-fromUFunc (ClrB  n) x = clearBit x n
-fromUFunc (SetB  n) x = setBit x n
-fromUFunc (InvB  n) x = complementBit x n
-fromUFunc (FromB n) _ = bit n
-fromUFunc (Shift n) x = shift x n
-fromUFunc (Rot   n) x = rotate x n
-fromUFunc  PopCnt   x = fromIntegral $ popCount x
-#if MIN_VERSION_base(4,8,0)
-fromUFunc  CntLZ    x = fromIntegral $ countLeadingZeros x
-fromUFunc  CntTZ    x = fromIntegral $ countTrailingZeros x
-#endif
-fromUFunc (AdjEnum i def) x = safeToEnum (fromIntegral def) . (+i) $ fromEnum x
-
--- | A 16-bit word underlied by a 64-bit word.
-type TestWord16 = OddWord Word64 (One (Zero (Zero (Zero (Zero ())))))
-
--- | Checks that computations using real and simulated 16-bit words produce
--- the same result for a series of 'UFunc's.
-verifyTestWord16 :: [UFunc] -> Bool
-verifyTestWord16 us =
-    let refFn = foldr (.) id $ map fromUFunc us :: Word16 -> Word16
-        tstFn = foldr (.) id $ map fromUFunc us :: TestWord16 -> TestWord16
-    in toInteger (refFn 0) == toInteger (tstFn 0)
+import Equiv
+import Props
 
 -- | List of bit lengths for all words up to 63-bits.
 preDefWordLengths :: [Int]
@@ -173,22 +47,31 @@ typeLitWordLengths = [
     finiteBitSize (0 :: OddWord Word8 (Lit 3)),
     finiteBitSize (0 :: OddWord Word8 (Lit 4))]
 
-checkWordLengths :: [Int] -> IO ()
-checkWordLengths xs =
-    mapM_ (\(u,v) -> putStrLn (
-        showString "Error: Word" . shows u . showString " has length " $
-            shows v ".") >> exitFailure) $
-        map fst $ filter snd $ map (\t -> (t,uncurry (/=) t)) $
-        zip [1..] xs
+checkWordLengths :: [Int] -> Expectation
+checkWordLengths =
+    flip shouldBe [] .
+    map fst . filter snd . map (\t -> (t,uncurry (/=) t)) .  zip [1..]
 
 main :: IO ()
-main = do
-    -- Verify lengths of predefined odd word synonyms
-    checkWordLengths preDefWordLengths
-    -- Verify lengths of odd words defined using GHC type-level literals
-    checkWordLengths typeLitWordLengths
-    -- Verify correctness of operations on a test word type
-    r <- quickCheckWithResult stdArgs {maxSuccess = 1000} verifyTestWord16
-    case r of
-        Success _ _ _ -> exitSuccess
-        _             -> exitFailure
+main = hspec $ do
+    describe "Predefined odd word synonyms" $
+        it "have the correct length" $
+            checkWordLengths preDefWordLengths
+    describe "Odd words with type literals" $
+        it "have the correct length" $
+            checkWordLengths typeLitWordLengths
+    modifyMaxSuccess (const 5000) $ describe "Word16" $ do
+        it "is equivalent to TestWord16 Word16" $
+            verifyEquivalence (Proxy :: Proxy 16)
+                (Proxy :: Proxy Word16) (Proxy :: Proxy (TestWord16 Word16))
+        it "is equivalent to TestWord16 Word32" $
+            verifyEquivalence (Proxy :: Proxy 16)
+                (Proxy :: Proxy Word16) (Proxy :: Proxy (TestWord16 Word32))
+        it "is equivalent to TestWord16 Word64" $
+            verifyEquivalence (Proxy :: Proxy 16)
+                (Proxy :: Proxy Word16) (Proxy :: Proxy (TestWord16 Word64))
+    describe "Word20" $ do
+        it "is in bounds" $ 
+            propInBounds (Proxy :: Proxy 20) (Proxy :: Proxy Word20)
+        it "can rotate left and right" $ 
+            propRotateRL (Proxy :: Proxy Word20)

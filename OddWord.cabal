@@ -32,12 +32,13 @@ Test-Suite oddword-tests
     hs-source-dirs:   test
     main-is:          Main.hs
     default-language: Haskell2010
+    other-modules: Equiv Props
     other-extensions:
-        ScopedTypeVariables CPP
-        DeriveDataTypeable DataKinds KindSignatures
+        ScopedTypeVariables CPP DataKinds
     build-depends:
         base       >= 4.7 && < 5,
-        QuickCheck >= 2.4 && < 2.12,
+        hspec      >= 2.5 && < 2.6,
+        QuickCheck >= 2.11 && < 2.12,
         OddWord
 
 Benchmark oddword-bench
@@ -46,8 +47,7 @@ Benchmark oddword-bench
     main-is:          Main.hs
     default-language: Haskell2010
     other-extensions:
-        ScopedTypeVariables CPP
-        DeriveDataTypeable DataKinds KindSignatures
+        ScopedTypeVariables
     build-depends:
         base       >= 4.7 && < 5,
         criterion  >= 1.4 && < 1.5,
