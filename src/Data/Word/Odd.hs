@@ -11,6 +11,11 @@ module Data.Word.Odd (
     Zero,
     Lit,
 
+    -- * Finite Bits
+    FiniteBitsBase(
+        subWordClz,
+        subWordCtz),
+
     -- * Predefined Odd Words
     Word1, Word2, Word3, Word4, Word5, Word6, Word7,
     Word9,  Word10, Word11, Word12, Word13, Word14, Word15,
@@ -90,6 +95,49 @@ instance (TypeNum a) => TypeNum (Zero a) where
 
 instance (KnownNat a) => TypeNum (Lit a) where
     typeNum = TypeNumBuilder (fromIntegral $ natVal (Proxy :: Proxy a)) 0
+
+-- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
+class Bits a => FiniteBitsBase a where
+#if MIN_VERSION_base(4,8,0)
+    -- | Count the leading zeros on a @w@-bit wide word.
+    subWordClz :: Int -> a -> Int
+    subWordClz w x = (w-1) - worker (w-1)
+        where worker i | i < 0       = i
+                       | testBit x i = i
+                       | otherwise   = worker (i-1)
+    -- | Count the trailing zeros on a @w@-bit wide word.
+    subWordCtz :: Int -> a -> Int
+    subWordCtz w x = worker 0
+        where worker i | i >= w      = i
+                       | testBit x i = i
+                       | otherwise   = worker (i+1)
+#endif
+
+instance FiniteBitsBase Word8 where
+#if MIN_VERSION_base(4,8,0)
+    subWordClz w x = countLeadingZeros x + w - finiteBitSize x
+    subWordCtz w x = min (countTrailingZeros x) w
+#endif
+
+instance FiniteBitsBase Word16 where
+#if MIN_VERSION_base(4,8,0)
+    subWordClz w x = countLeadingZeros x + w - finiteBitSize x
+    subWordCtz w x = min (countTrailingZeros x) w
+#endif
+
+instance FiniteBitsBase Word32 where
+#if MIN_VERSION_base(4,8,0)
+    subWordClz w x = countLeadingZeros x + w - finiteBitSize x
+    subWordCtz w x = min (countTrailingZeros x) w
+#endif
+
+instance FiniteBitsBase Word64 where
+#if MIN_VERSION_base(4,8,0)
+    subWordClz w x = countLeadingZeros x + w - finiteBitSize x
+    subWordCtz w x = min (countTrailingZeros x) w
+#endif
+
+instance FiniteBitsBase Integer where
 
 -- | Wraps both parts of a homogenous pair with the OddWord constructor.
 pairOW :: (a, a) -> (OddWord a n, OddWord a n)
@@ -195,13 +243,13 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
               w  = fromTypeNum (typeNum :: TypeNumBuilder n)
     popCount (OW x) = popCount x
 
-instance (Num a, FiniteBits a, TypeNum n) => FiniteBits (OddWord a n) where
+instance (Num a, FiniteBitsBase a, TypeNum n) => FiniteBits (OddWord a n) where
     finiteBitSize _ = fromTypeNum (typeNum :: TypeNumBuilder n) 
 #if MIN_VERSION_base(4,8,0)
-    countLeadingZeros (OW x) = countLeadingZeros x +
-        fromTypeNum (typeNum :: TypeNumBuilder n) - finiteBitSize x
-    countTrailingZeros (OW x) = min (countTrailingZeros x) $
-        fromTypeNum (typeNum :: TypeNumBuilder n)
+    countLeadingZeros (OW x) =
+        subWordClz (fromTypeNum (typeNum :: TypeNumBuilder n)) x
+    countTrailingZeros (OW x) =
+        subWordCtz (fromTypeNum (typeNum :: TypeNumBuilder n)) x
 #endif
 
 --

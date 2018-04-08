@@ -70,6 +70,9 @@ main = hspec $ do
         it "is equivalent to TestWord16 Word64" $
             verifyEquivalence (Proxy :: Proxy 16)
                 (Proxy :: Proxy Word16) (Proxy :: Proxy (TestWord16 Word64))
+        it "is equivalent to TestWord16 Integer" $
+            verifyEquivalence (Proxy :: Proxy 16)
+                (Proxy :: Proxy Word16) (Proxy :: Proxy (TestWord16 Integer))
     describe "Word20" $ do
         it "is in bounds" $ 
             propInBounds (Proxy :: Proxy 20) (Proxy :: Proxy Word20)

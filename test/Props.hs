@@ -20,7 +20,7 @@ genOddWord _ =
         fromIntegral (minBound::OddWord a n),
         fromIntegral (maxBound::OddWord a n))
 
-propRotateRL :: (Integral a, FiniteBits a, TypeNum n) =>
+propRotateRL :: (Integral a, FiniteBitsBase a, TypeNum n) =>
     Proxy (OddWord a n) -> Property
 propRotateRL proxy =
     property $ do
@@ -29,8 +29,8 @@ propRotateRL proxy =
         return $ (==) x $ flip rotateL i $ rotateR x i
 
 propInBounds :: forall a n nn.
-    (TypeNum n, Integral a, Bounded a, Enum a, FiniteBits a, Read a, Show a,
-     KnownNat nn) =>
+    (TypeNum n, KnownNat nn,
+     Integral a, Bounded a, Enum a, FiniteBitsBase a, Read a, Show a) =>
     Proxy nn -> Proxy (OddWord a n) -> Property
 propInBounds _ _ = property $ \(us :: [UFunc nn]) ->
     let tstFn = foldr (.) id $ map fromUFunc us :: OddWord a n -> OddWord a n
