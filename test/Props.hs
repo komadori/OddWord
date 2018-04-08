@@ -16,8 +16,7 @@ genOddWord :: forall a n.
     (Integral a, Bits a, TypeNum n) =>
     Proxy (OddWord a n) -> Gen (OddWord a n)
 genOddWord _ =
-    (fromIntegral :: Integer -> OddWord a n) <$>
-    choose (
+    fmap (fromIntegral :: Integer -> OddWord a n) $ choose (
         fromIntegral (minBound::OddWord a n),
         fromIntegral (maxBound::OddWord a n))
 
