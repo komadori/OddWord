@@ -18,7 +18,7 @@ benchNum :: forall a. (Eq a, Num a, Typeable a) => a -> Benchmark
 benchNum x =
     bgroup (show $ typeRep (Proxy :: Proxy a)) [
         bench "addMul" $ whnf testAddMul x,
-        bench "equals" $ whnf testAddMul x
+        bench "equals" $ whnf testEquals x
     ]
 
 main :: IO ()
