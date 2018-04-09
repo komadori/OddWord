@@ -96,11 +96,14 @@ instance (TypeNum a) => TypeNum (Zero a) where
 
 -- | Provides a more efficient mechanism for converting 'Nat'-kinded types into
 -- small integers than 'KnownNat'.
-data ZNat = IsZ | NonZ Nat
+data ZNat = IsZ | NonZE Nat | NonZO Nat
 
-type family ToZNat (n::Nat) where
-    ToZNat 0 = IsZ
-    ToZNat n = NonZ n
+type family ToZNatImpl (lsb::Nat) (n::Nat) where
+    ToZNatImpl 0 0 = IsZ
+    ToZNatImpl n 0 = NonZE n
+    ToZNatImpl n 1 = NonZO n
+
+type ToZNat n = ToZNatImpl n (Mod n 2)
 
 class ZNatValue (n::ZNat) where
     znatIntVal :: proxy n -> Int
@@ -109,13 +112,17 @@ instance ZNatValue IsZ where
     znatIntVal _ = 0
     {-# INLINE znatIntVal #-}
 
-instance ZNatValue (ToZNat (n-1)) => ZNatValue (NonZ n) where
-    znatIntVal _ = 1 + znatIntVal (Proxy :: Proxy (ToZNat (n-1)))
+instance ZNatValue (ToZNat (Div n 2)) => ZNatValue (NonZE n) where
+    znatIntVal _ = 2 * (znatIntVal (Proxy :: Proxy (ToZNat (Div n 2))))
     {-# INLINE znatIntVal #-}
 
-instance (ZNatValue (ToZNat a)) => TypeNum (Lit a) where
+instance ZNatValue (ToZNat (Div n 2)) => ZNatValue (NonZO n) where
+    znatIntVal _ = 1 + 2 * (znatIntVal (Proxy :: Proxy (ToZNat (Div n 2))))
+    {-# INLINE znatIntVal #-}
+
+instance (ZNatValue (ToZNat n)) => TypeNum (Lit n) where
     typeNum = TypeNumBuilder
-        (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat a))) 0
+        (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n))) 0
 
 -- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
 class Bits a => FiniteBitsBase a where
