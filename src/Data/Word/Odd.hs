@@ -98,7 +98,6 @@ instance (KnownNat a) => TypeNum (Lit a) where
 
 -- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
 class Bits a => FiniteBitsBase a where
-#if MIN_VERSION_base(4,8,0)
     -- | Count the leading zeros on a @w@-bit wide word.
     subWordClz :: Int -> a -> Int
     subWordClz w x = (w-1) - worker (w-1)
@@ -111,7 +110,6 @@ class Bits a => FiniteBitsBase a where
         where worker i | i >= w      = i
                        | testBit x i = i
                        | otherwise   = worker (i+1)
-#endif
 
 instance FiniteBitsBase Word8 where
 #if MIN_VERSION_base(4,8,0)
