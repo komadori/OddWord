@@ -1,5 +1,6 @@
 {-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
-             DeriveDataTypeable, DataKinds, KindSignatures #-}
+             DeriveDataTypeable, DataKinds, KindSignatures,
+             TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 module Data.Word.Odd (
     -- * Odd Word Wrapper
@@ -93,8 +94,28 @@ instance (TypeNum a) => TypeNum (Zero a) where
     typeNum = let (TypeNumBuilder n m) = (typeNum :: TypeNumBuilder a)
               in TypeNumBuilder (n) (m+1)
 
-instance (KnownNat a) => TypeNum (Lit a) where
-    typeNum = TypeNumBuilder (fromIntegral $ natVal (Proxy :: Proxy a)) 0
+-- | Provides a more efficient mechanism for converting 'Nat'-kinded types into
+-- small integers than 'KnownNat'.
+data ZNat = IsZ | NonZ Nat
+
+type family ToZNat (n::Nat) where
+    ToZNat 0 = IsZ
+    ToZNat n = NonZ n
+
+class ZNatValue (n::ZNat) where
+    znatIntVal :: proxy n -> Int
+
+instance ZNatValue IsZ where
+    znatIntVal _ = 0
+    {-# INLINE znatIntVal #-}
+
+instance ZNatValue (ToZNat (n-1)) => ZNatValue (NonZ n) where
+    znatIntVal _ = 1 + znatIntVal (Proxy :: Proxy (ToZNat (n-1)))
+    {-# INLINE znatIntVal #-}
+
+instance (ZNatValue (ToZNat a)) => TypeNum (Lit a) where
+    typeNum = TypeNumBuilder
+        (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat a))) 0
 
 -- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
 class Bits a => FiniteBitsBase a where

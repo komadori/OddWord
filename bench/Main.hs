@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, DataKinds #-}
 
 module Main where
 
@@ -25,5 +25,6 @@ main :: IO ()
 main =
     defaultMain [
         benchNum (1::Word),
-        benchNum (1::Word20)
+        benchNum (1::Word20),
+        benchNum (1::(OddWord Word32 (Lit 20)))
     ]
