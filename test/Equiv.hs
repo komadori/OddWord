@@ -1,4 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
+{-# LANGUAGE Haskell2010, ScopedTypeVariables,
              DataKinds, KindSignatures #-}
 
 module Equiv where
@@ -25,9 +25,7 @@ data UFunc (n::Nat)
     | From  Integer | And   Integer | Or    Integer | Xor   Integer
     | TstB  Int     | ClrB  Int     | SetB  Int     | InvB  Int
     | FromB Int     | Shift Int     | Rot   Int     | PopCnt
-#if MIN_VERSION_base(4,8,0)
     | CntLZ         | CntTZ
-#endif
     | AdjEnum Int Integer
     deriving Show
 
@@ -61,10 +59,8 @@ instance KnownNat n => Arbitrary (UFunc n) where
         ,Shift <$> choose (0, 2*width)
         ,Rot   <$> choose (0, 2*width)
         ,return PopCnt
-#if MIN_VERSION_base(4,8,0)
         ,return CntLZ
         ,return CntTZ
-#endif
         ,AdjEnum <$> arbitrary <*> choose (0, upper)
         ]
         where width = fromIntegral $ natVal (Proxy :: Proxy n) 
@@ -126,10 +122,8 @@ fromUFunc (FromB n) _ = bit n
 fromUFunc (Shift n) x = shift x n
 fromUFunc (Rot   n) x = rotate x n
 fromUFunc  PopCnt   x = fromIntegral $ popCount x
-#if MIN_VERSION_base(4,8,0)
 fromUFunc  CntLZ    x = fromIntegral $ countLeadingZeros x
 fromUFunc  CntTZ    x = fromIntegral $ countTrailingZeros x
-#endif
 fromUFunc (AdjEnum i def) x = safeToEnum (fromIntegral def) . (+i) $ fromEnum x
 
 -- | Checks that computations using real and simulated words produce the same

@@ -1,4 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
+{-# LANGUAGE Haskell2010, ScopedTypeVariables,
              DeriveDataTypeable, DataKinds, KindSignatures,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
@@ -133,28 +133,20 @@ class Bits a => FiniteBitsBase a where
                        | otherwise   = worker (i+1)
 
 instance FiniteBitsBase Word8 where
-#if MIN_VERSION_base(4,8,0)
     subWordClz w x = countLeadingZeros x + w - finiteBitSize x
     subWordCtz w x = min (countTrailingZeros x) w
-#endif
 
 instance FiniteBitsBase Word16 where
-#if MIN_VERSION_base(4,8,0)
     subWordClz w x = countLeadingZeros x + w - finiteBitSize x
     subWordCtz w x = min (countTrailingZeros x) w
-#endif
 
 instance FiniteBitsBase Word32 where
-#if MIN_VERSION_base(4,8,0)
     subWordClz w x = countLeadingZeros x + w - finiteBitSize x
     subWordCtz w x = min (countTrailingZeros x) w
-#endif
 
 instance FiniteBitsBase Word64 where
-#if MIN_VERSION_base(4,8,0)
     subWordClz w x = countLeadingZeros x + w - finiteBitSize x
     subWordCtz w x = min (countTrailingZeros x) w
-#endif
 
 instance FiniteBitsBase Integer where
 
@@ -264,12 +256,10 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
 
 instance (Num a, FiniteBitsBase a, TypeNum n) => FiniteBits (OddWord a n) where
     finiteBitSize _ = fromTypeNum (typeNum :: TypeNumBuilder n) 
-#if MIN_VERSION_base(4,8,0)
     countLeadingZeros (OW x) =
         subWordClz (fromTypeNum (typeNum :: TypeNumBuilder n)) x
     countTrailingZeros (OW x) =
         subWordCtz (fromTypeNum (typeNum :: TypeNumBuilder n)) x
-#endif
 
 --
 -- Predefined Odd Words

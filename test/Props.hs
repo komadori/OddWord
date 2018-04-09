@@ -1,4 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP, DataKinds #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, DataKinds #-}
 
 module Props where
 

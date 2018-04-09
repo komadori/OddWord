@@ -22,11 +22,11 @@ Library
     exposed-modules:  Data.Word.Odd
     default-language: Haskell2010
     other-extensions:
-        ScopedTypeVariables CPP
+        ScopedTypeVariables
         DeriveDataTypeable DataKinds KindSignatures
         TypeFamilies TypeOperators UndecidableInstances
     build-depends:
-        base >= 4.7 && < 5
+        base >= 4.8 && < 5
 
 Test-Suite oddword-tests
     type:             exitcode-stdio-1.0
@@ -35,9 +35,9 @@ Test-Suite oddword-tests
     default-language: Haskell2010
     other-modules: Equiv Props
     other-extensions:
-        ScopedTypeVariables CPP DataKinds
+        ScopedTypeVariables DataKinds
     build-depends:
-        base       >= 4.7 && < 5,
+        base       >= 4.8 && < 5,
         hspec      >= 2.5 && < 2.6,
         QuickCheck >= 2.11 && < 2.12,
         OddWord
@@ -50,7 +50,7 @@ Benchmark oddword-bench
     other-extensions:
         ScopedTypeVariables DataKinds
     build-depends:
-        base       >= 4.7 && < 5,
+        base       >= 4.8 && < 5,
         criterion  >= 1.4 && < 1.5,
         OddWord
 
