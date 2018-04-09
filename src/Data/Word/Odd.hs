@@ -227,7 +227,7 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
     (OW l) .&. (OW r) = OW $ l .&. r
     (OW l) .|. (OW r) = OW $ l .|. r
     xor (OW l) (OW r) = OW $ xor l r
-    complement (OW x) = maskOW $ complement x
+    complement x = x `xor` owMask
     bit n | n < fromTypeNum (typeNum :: TypeNumBuilder n)
           = OW $ bit n
           | otherwise = OW 0
