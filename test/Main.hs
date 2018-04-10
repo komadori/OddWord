@@ -78,3 +78,9 @@ main = hspec $ do
             propInBounds (Proxy :: Proxy 20) (Proxy :: Proxy Word20)
         it "can rotate left and right" $ 
             propRotateRL (Proxy :: Proxy Word20)
+    describe "Word2000" $ do
+        it "is in bounds" $ 
+            propInBounds (Proxy :: Proxy 2000)
+                         (Proxy :: Proxy (OddWord Integer (Lit 2000)))
+        it "can rotate left and right" $ 
+            propRotateRL (Proxy :: Proxy (OddWord Integer (Lit 2000)))
