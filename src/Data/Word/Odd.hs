@@ -130,13 +130,14 @@ instance (ZNatValue (ToZNat n)) => TypeNum (Lit n) where
 -- 16*log16(n) recursions for values of n below 2^16.
 data ZNat = IsZ | NonZ Nat | NonZ4 Nat | NonZ8 Nat | NonZ12 Nat
 
+-- Regarding u, v, and w, GHC 7.10 doesn't like wildcards in type families.
 type family ToZNatImpl
         (n::Nat) (nz4::Ordering) (nz8::Ordering) (nz12::Ordering) where
     ToZNatImpl 0 LT LT LT = IsZ
     ToZNatImpl n LT LT LT = NonZ n
-    ToZNatImpl n _  LT LT = NonZ4 n
-    ToZNatImpl n _  _  LT = NonZ8 n
-    ToZNatImpl n _  _  _  = NonZ12 n
+    ToZNatImpl n u  LT LT = NonZ4 n
+    ToZNatImpl n u  v  LT = NonZ8 n
+    ToZNatImpl n u  v  w  = NonZ12 n
 
 type ToZNat n = ToZNatImpl n (CmpNat n 16) (CmpNat n 256) (CmpNat n 4096)
 
