@@ -28,12 +28,11 @@ propRotateRL proxy =
         i <- choose (0, 2*finiteBitSize x)
         return $ (==) x $ flip rotateL i $ rotateR x i
 
-propInBounds :: forall a n nn.
-    (TypeNum n, KnownNat nn,
-     Integral a, Bounded a, Enum a, FiniteBitsBase a, Read a, Show a) =>
-    Proxy nn -> Proxy (OddWord a n) -> Property
-propInBounds _ _ = property $ \(us :: [UFunc nn]) ->
-    let tstFn = foldr (.) id $ map fromUFunc us :: OddWord a n -> OddWord a n
+propInBounds :: forall n a.
+    (KnownNat n, Integral a, Bounded a, Enum a, FiniteBits a, Read a, Show a) =>
+    Proxy n -> Proxy a -> Property
+propInBounds _ _ = property $ \(us :: [UFunc n]) ->
+    let tstFn = foldr (.) id $ map fromUFunc us :: a -> a
         value = toInteger $ tstFn 0
-    in value >= toInteger (minBound :: OddWord a n) &&
-       value <= toInteger (maxBound :: OddWord a n)
+    in value >= toInteger (minBound :: a) &&
+       value <= toInteger (maxBound :: a)
