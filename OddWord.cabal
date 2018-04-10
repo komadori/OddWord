@@ -22,7 +22,7 @@ Library
     exposed-modules:  Data.Word.Odd
     default-language: Haskell2010
     other-extensions:
-        ScopedTypeVariables
+        ScopedTypeVariables CPP
         DeriveDataTypeable DataKinds KindSignatures
         TypeFamilies TypeOperators UndecidableInstances
     build-depends:

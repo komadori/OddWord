@@ -1,4 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables,
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
              DeriveDataTypeable, DataKinds, KindSignatures,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
@@ -96,9 +96,11 @@ instance (TypeNum a) => TypeNum (Zero a) where
 
 -- | Provides a more efficient mechanism for converting 'Nat'-kinded types into
 -- small integers than 'KnownNat'.
+#if MIN_VERSION_base(4,11,0)
+-- Decomposes Nats in log2(n) recursions, one bit at a time.
 data ZNat = IsZ | NonZE Nat | NonZO Nat
 
-type family ToZNatImpl (lsb::Nat) (n::Nat) where
+type family ToZNatImpl (n::Nat) (lsb::Nat) where
     ToZNatImpl 0 0 = IsZ
     ToZNatImpl n 0 = NonZE n
     ToZNatImpl n 1 = NonZO n
@@ -123,6 +125,48 @@ instance ZNatValue (ToZNat (Div n 2)) => ZNatValue (NonZO n) where
 instance (ZNatValue (ToZNat n)) => TypeNum (Lit n) where
     typeNum = TypeNumBuilder
         (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n))) 0
+#else
+-- For older GHCs that don't support Div and Mod, decomposes Nats in
+-- 16*log16(n) recursions for values of n below 2^16.
+data ZNat = IsZ | NonZ Nat | NonZ4 Nat | NonZ8 Nat | NonZ12 Nat
+
+type family ToZNatImpl
+        (n::Nat) (nz4::Ordering) (nz8::Ordering) (nz12::Ordering) where
+    ToZNatImpl 0 LT LT LT = IsZ
+    ToZNatImpl n LT LT LT = NonZ n
+    ToZNatImpl n _  LT LT = NonZ4 n
+    ToZNatImpl n _  _  LT = NonZ8 n
+    ToZNatImpl n _  _  _  = NonZ12 n
+
+type ToZNat n = ToZNatImpl n (CmpNat n 16) (CmpNat n 256) (CmpNat n 4096)
+
+class ZNatValue (n::ZNat) where
+    znatIntVal :: proxy n -> Int
+
+instance ZNatValue IsZ where
+    znatIntVal _ = 0
+    {-# INLINE znatIntVal #-}
+
+instance ZNatValue (ToZNat (n - 1)) => ZNatValue (NonZ n) where
+    znatIntVal _ = 1 + (znatIntVal (Proxy :: Proxy (ToZNat (n - 1))))
+    {-# INLINE znatIntVal #-}
+
+instance ZNatValue (ToZNat (n - 16)) => ZNatValue (NonZ4 n) where
+    znatIntVal _ = 16 + (znatIntVal (Proxy :: Proxy (ToZNat (n - 16))))
+    {-# INLINE znatIntVal #-}
+
+instance ZNatValue (ToZNat (n - 256)) => ZNatValue (NonZ8 n) where
+    znatIntVal _ = 256 + (znatIntVal (Proxy :: Proxy (ToZNat (n - 256))))
+    {-# INLINE znatIntVal #-}
+
+instance ZNatValue (ToZNat (n - 4096)) => ZNatValue (NonZ12 n) where
+    znatIntVal _ = 4096 + (znatIntVal (Proxy :: Proxy (ToZNat (n - 4096))))
+    {-# INLINE znatIntVal #-}
+
+instance (ZNatValue (ToZNat n)) => TypeNum (Lit n) where
+    typeNum = TypeNumBuilder
+        (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n))) 0
+#endif
 
 -- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
 class Bits a => FiniteBitsBase a where
