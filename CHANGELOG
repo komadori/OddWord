@@ -1,5 +1,15 @@
 OddWord - Release History
 
+release-1.0.2.0 - 2018.04.11
+
+  * Added FiniteBitsBase to support FiniteBits atop non-finite base types.
+  * Added explicit Typeable instances.
+  * Removed Cabal flag for type-level literals in favour of always enabling.
+  * Fixed performance impact of using type-level literals.
+  * Fixed undefined behaviour in test suite.
+  * Changed minimum supported GHC version to 7.10 (base 4.8).
+  * Changed test suite to use hspec.
+
 release-1.0.1.1 - 2018.04.05
 
   * Added criterion benchmark
