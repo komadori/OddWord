@@ -1,5 +1,4 @@
-{-# LANGUAGE Haskell2010, ScopedTypeVariables,
-             DataKinds, KindSignatures #-}
+{-# LANGUAGE Haskell2010, ScopedTypeVariables, DataKinds, KindSignatures #-}
 
 module Equiv where
 
