@@ -121,10 +121,6 @@ instance ZNatValue (ToZNat (Div n 2)) => ZNatValue (NonZE n) where
 instance ZNatValue (ToZNat (Div n 2)) => ZNatValue (NonZO n) where
     znatIntVal _ = 1 + 2 * (znatIntVal (Proxy :: Proxy (ToZNat (Div n 2))))
     {-# INLINE znatIntVal #-}
-
-instance (ZNatValue (ToZNat n)) => TypeNum (Lit n) where
-    typeNum = TypeNumBuilder
-        (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n))) 0
 #else
 -- For older GHCs that don't support Div and Mod, decomposes Nats in
 -- 16*log16(n) recursions for values of n below 2^16.
@@ -163,11 +159,11 @@ instance ZNatValue (ToZNat (n - 256)) => ZNatValue (NonZ8 n) where
 instance ZNatValue (ToZNat (n - 4096)) => ZNatValue (NonZ12 n) where
     znatIntVal _ = 4096 + (znatIntVal (Proxy :: Proxy (ToZNat (n - 4096))))
     {-# INLINE znatIntVal #-}
+#endif
 
 instance (ZNatValue (ToZNat n)) => TypeNum (Lit n) where
     typeNum = TypeNumBuilder
         (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n))) 0
-#endif
 
 -- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
 class Bits a => FiniteBitsBase a where
