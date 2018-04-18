@@ -42,10 +42,10 @@ preDefWordLengths = [
 
 typeLitWordLengths :: [Int]
 typeLitWordLengths = [
-    finiteBitSize (0 :: OddWord Word8 (Lit 1)),
-    finiteBitSize (0 :: OddWord Word8 (Lit 2)),
-    finiteBitSize (0 :: OddWord Word8 (Lit 3)),
-    finiteBitSize (0 :: OddWord Word8 (Lit 4))]
+    finiteBitSize (0 :: OddWord Word8 1),
+    finiteBitSize (0 :: OddWord Word8 2),
+    finiteBitSize (0 :: OddWord Word8 3),
+    finiteBitSize (0 :: OddWord Word8 4)]
 
 checkWordLengths :: [Int] -> Expectation
 checkWordLengths =
@@ -81,6 +81,6 @@ main = hspec $ do
     describe "Word2000" $ do
         it "is in bounds" $ 
             propInBounds (Proxy :: Proxy 2000)
-                         (Proxy :: Proxy (OddWord Integer (Lit 2000)))
+                         (Proxy :: Proxy (OddWord Integer 2000))
         it "can rotate left and right" $ 
-            propRotateRL (Proxy :: Proxy (OddWord Integer (Lit 2000)))
+            propRotateRL (Proxy :: Proxy (OddWord Integer 2000))

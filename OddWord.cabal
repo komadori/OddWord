@@ -25,6 +25,7 @@ Library
         ScopedTypeVariables CPP
         DeriveDataTypeable DataKinds KindSignatures
         TypeFamilies TypeOperators UndecidableInstances
+        FlexibleInstances
     build-depends:
         base >= 4.8 && < 5
 

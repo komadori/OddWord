@@ -26,5 +26,5 @@ main =
     defaultMain [
         benchNum (1::Word),
         benchNum (1::Word20),
-        benchNum (1::(OddWord Word32 (Lit 20)))
+        benchNum (1::(OddWord Word32 20))
     ]

@@ -1,6 +1,7 @@
 {-# LANGUAGE Haskell2010, ScopedTypeVariables, CPP,
              DeriveDataTypeable, DataKinds, KindSignatures,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+             TypeFamilies, TypeOperators, UndecidableInstances,
+             FlexibleInstances #-}
 
 module Data.Word.Odd (
     -- * Odd Word Wrapper
@@ -8,9 +9,6 @@ module Data.Word.Odd (
 
     -- * Type Numbers
     TypeNum,
-    One,
-    Zero,
-    Lit,
 
     -- * Finite Bits
     FiniteBitsBase(
@@ -60,39 +58,16 @@ import GHC.TypeLits
 -- greater than that of the underlying integer type. The behaviour is also
 -- undefined if the specified length is equal to that of the underlying integer
 -- type and that type is also signed.
-newtype OddWord a n = OW {unOW :: a} deriving (Eq, Ord, Typeable)
+newtype OddWord a (n::Nat) = OW {unOW :: a} deriving (Eq, Ord, Typeable)
 
-data TypeNumBuilder a = TypeNumBuilder Int Int
+newtype TypeNumBuilder (a::Nat) = TypeNumBuilder Int
 
 fromTypeNum :: TypeNumBuilder a -> Int
-fromTypeNum (TypeNumBuilder x _) = x
+fromTypeNum (TypeNumBuilder x) = x
 
 -- | Intances of 'TypeNum' represent type-level numbers.
-class TypeNum a where
+class TypeNum (a::Nat) where
     typeNum :: TypeNumBuilder a
-
--- | Represents a type-level number with a leading one bit followed by the
--- string of digits specified by @a@.
-data One a deriving Typeable
-
--- | Represents a type-level number with a placeholder zero bit followed by the
--- string of digits specified by @a@.
-data Zero a deriving Typeable
-
--- | Converts a native GHC type-level natural into one usable by this library.
--- This requires the @DataKinds@ extension.
-data Lit :: Nat -> * deriving Typeable
-
-instance TypeNum () where
-    typeNum = TypeNumBuilder 0 0
-
-instance (TypeNum a) => TypeNum (One a) where
-    typeNum = let (TypeNumBuilder n m) = (typeNum :: TypeNumBuilder a)
-              in TypeNumBuilder (n+bit m) (m+1)
-
-instance (TypeNum a) => TypeNum (Zero a) where
-    typeNum = let (TypeNumBuilder n m) = (typeNum :: TypeNumBuilder a)
-              in TypeNumBuilder (n) (m+1)
 
 -- | Provides a more efficient mechanism for converting 'Nat'-kinded types into
 -- small integers than 'KnownNat'.
@@ -161,9 +136,9 @@ instance ZNatValue (ToZNat (n - 4096)) => ZNatValue (NonZ12 n) where
     {-# INLINE znatIntVal #-}
 #endif
 
-instance (ZNatValue (ToZNat n)) => TypeNum (Lit n) where
+instance (ZNatValue (ToZNat n)) => TypeNum n where
     typeNum = TypeNumBuilder
-        (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n))) 0
+        (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n)))
 
 -- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
 class Bits a => FiniteBitsBase a where
@@ -313,66 +288,66 @@ instance (Num a, FiniteBitsBase a, TypeNum n) => FiniteBits (OddWord a n) where
 -- Predefined Odd Words
 --
 
-type Word1  = OddWord Word8             (One  ())
-type Word2  = OddWord Word8        (One (Zero ()))
-type Word3  = OddWord Word8        (One (One  ()))
-type Word4  = OddWord Word8  (One (Zero (Zero ())))
-type Word5  = OddWord Word8  (One (Zero (One  ())))
-type Word6  = OddWord Word8  (One (One  (Zero ())))
-type Word7  = OddWord Word8  (One (One  (One  ())))
+type Word1  = OddWord Word8 1
+type Word2  = OddWord Word8 2
+type Word3  = OddWord Word8 3
+type Word4  = OddWord Word8 4
+type Word5  = OddWord Word8 5
+type Word6  = OddWord Word8 6
+type Word7  = OddWord Word8 7
 --type Word8
-type Word9  = OddWord Word16 (One (Zero (Zero (One  ()))))
-type Word10 = OddWord Word16 (One (Zero (One  (Zero ()))))
-type Word11 = OddWord Word16 (One (Zero (One  (One  ()))))
-type Word12 = OddWord Word16 (One (One  (Zero (Zero ()))))
-type Word13 = OddWord Word16 (One (One  (Zero (One  ()))))
-type Word14 = OddWord Word16 (One (One  (One  (Zero ()))))
-type Word15 = OddWord Word16 (One (One  (One  (One  ()))))
+type Word9  = OddWord Word16 9
+type Word10 = OddWord Word16 10
+type Word11 = OddWord Word16 11
+type Word12 = OddWord Word16 12
+type Word13 = OddWord Word16 13
+type Word14 = OddWord Word16 14
+type Word15 = OddWord Word16 15
 --type Word16
-type Word17 = OddWord Word32 (One (Zero (Zero (Zero (One  ())))))
-type Word18 = OddWord Word32 (One (Zero (Zero (One  (Zero ())))))
-type Word19 = OddWord Word32 (One (Zero (Zero (One  (One  ())))))
-type Word20 = OddWord Word32 (One (Zero (One  (Zero (Zero ())))))
-type Word21 = OddWord Word32 (One (Zero (One  (Zero (One  ())))))
-type Word22 = OddWord Word32 (One (Zero (One  (One  (Zero ())))))
-type Word23 = OddWord Word32 (One (Zero (One  (One  (One  ())))))
-type Word24 = OddWord Word32 (One (One  (Zero (Zero (Zero ())))))
-type Word25 = OddWord Word32 (One (One  (Zero (Zero (One  ())))))
-type Word26 = OddWord Word32 (One (One  (Zero (One  (Zero ())))))
-type Word27 = OddWord Word32 (One (One  (Zero (One  (One  ())))))
-type Word28 = OddWord Word32 (One (One  (One  (Zero (Zero ())))))
-type Word29 = OddWord Word32 (One (One  (One  (Zero (One  ())))))
-type Word30 = OddWord Word32 (One (One  (One  (One  (Zero ())))))
-type Word31 = OddWord Word32 (One (One  (One  (One  (One  ())))))
+type Word17 = OddWord Word32 17
+type Word18 = OddWord Word32 18
+type Word19 = OddWord Word32 19
+type Word20 = OddWord Word32 20
+type Word21 = OddWord Word32 21
+type Word22 = OddWord Word32 22
+type Word23 = OddWord Word32 23
+type Word24 = OddWord Word32 24
+type Word25 = OddWord Word32 25
+type Word26 = OddWord Word32 26
+type Word27 = OddWord Word32 27
+type Word28 = OddWord Word32 28
+type Word29 = OddWord Word32 29
+type Word30 = OddWord Word32 30
+type Word31 = OddWord Word32 31
 --type Word32
-type Word33 = OddWord Word64 (One (Zero (Zero (Zero (Zero (One  ()))))))
-type Word34 = OddWord Word64 (One (Zero (Zero (Zero (One  (Zero ()))))))
-type Word35 = OddWord Word64 (One (Zero (Zero (Zero (One  (One  ()))))))
-type Word36 = OddWord Word64 (One (Zero (Zero (One  (Zero (Zero ()))))))
-type Word37 = OddWord Word64 (One (Zero (Zero (One  (Zero (One  ()))))))
-type Word38 = OddWord Word64 (One (Zero (Zero (One  (One  (Zero ()))))))
-type Word39 = OddWord Word64 (One (Zero (Zero (One  (One  (One  ()))))))
-type Word40 = OddWord Word64 (One (Zero (One  (Zero (Zero (Zero ()))))))
-type Word41 = OddWord Word64 (One (Zero (One  (Zero (Zero (One  ()))))))
-type Word42 = OddWord Word64 (One (Zero (One  (Zero (One  (Zero ()))))))
-type Word43 = OddWord Word64 (One (Zero (One  (Zero (One  (One  ()))))))
-type Word44 = OddWord Word64 (One (Zero (One  (One  (Zero (Zero ()))))))
-type Word45 = OddWord Word64 (One (Zero (One  (One  (Zero (One  ()))))))
-type Word46 = OddWord Word64 (One (Zero (One  (One  (One  (Zero ()))))))
-type Word47 = OddWord Word64 (One (Zero (One  (One  (One  (One  ()))))))
-type Word48 = OddWord Word64 (One (One  (Zero (Zero (Zero (Zero ()))))))
-type Word49 = OddWord Word64 (One (One  (Zero (Zero (Zero (One  ()))))))
-type Word50 = OddWord Word64 (One (One  (Zero (Zero (One  (Zero ()))))))
-type Word51 = OddWord Word64 (One (One  (Zero (Zero (One  (One  ()))))))
-type Word52 = OddWord Word64 (One (One  (Zero (One  (Zero (Zero ()))))))
-type Word53 = OddWord Word64 (One (One  (Zero (One  (Zero (One  ()))))))
-type Word54 = OddWord Word64 (One (One  (Zero (One  (One  (Zero ()))))))
-type Word55 = OddWord Word64 (One (One  (Zero (One  (One  (One  ()))))))
-type Word56 = OddWord Word64 (One (One  (One  (Zero (Zero (Zero ()))))))
-type Word57 = OddWord Word64 (One (One  (One  (Zero (Zero (One  ()))))))
-type Word58 = OddWord Word64 (One (One  (One  (Zero (One  (Zero ()))))))
-type Word59 = OddWord Word64 (One (One  (One  (Zero (One  (One  ()))))))
-type Word60 = OddWord Word64 (One (One  (One  (One  (Zero (Zero ()))))))
-type Word61 = OddWord Word64 (One (One  (One  (One  (Zero (One  ()))))))
-type Word62 = OddWord Word64 (One (One  (One  (One  (One  (Zero ()))))))
-type Word63 = OddWord Word64 (One (One  (One  (One  (One  (One  ()))))))
+type Word33 = OddWord Word64 33
+type Word34 = OddWord Word64 34
+type Word35 = OddWord Word64 35
+type Word36 = OddWord Word64 36
+type Word37 = OddWord Word64 37
+type Word38 = OddWord Word64 38
+type Word39 = OddWord Word64 39
+type Word40 = OddWord Word64 40
+type Word41 = OddWord Word64 41
+type Word42 = OddWord Word64 42
+type Word43 = OddWord Word64 43
+type Word44 = OddWord Word64 44
+type Word45 = OddWord Word64 45
+type Word46 = OddWord Word64 46
+type Word47 = OddWord Word64 47
+type Word48 = OddWord Word64 48
+type Word49 = OddWord Word64 49
+type Word50 = OddWord Word64 50
+type Word51 = OddWord Word64 51
+type Word52 = OddWord Word64 52
+type Word53 = OddWord Word64 53
+type Word54 = OddWord Word64 54
+type Word55 = OddWord Word64 55
+type Word56 = OddWord Word64 56
+type Word57 = OddWord Word64 57
+type Word58 = OddWord Word64 58
+type Word59 = OddWord Word64 59
+type Word60 = OddWord Word64 60
+type Word61 = OddWord Word64 61
+type Word62 = OddWord Word64 62
+type Word63 = OddWord Word64 63
