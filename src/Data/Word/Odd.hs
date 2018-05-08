@@ -34,25 +34,10 @@ import Data.Typeable
 import GHC.TypeLits
 
 -- | 'OddWord' provides a range of unsigned integer word types with a length in
--- bits encoded at the type level. The first type parameter @a@ must supply an
--- integer type which can hold at least as many bits as required for the
--- 'OddWord'. The second type paramter @n@ then encodes the length in bits
--- which the 'OddWord' will be restricted to.
---
--- The length of the 'OddWord' can be encoded as a string of binary digits
--- using the 'One', 'Zero', and @()@ type constructors. The outermost
--- constructor specifies the most significant digit and each subsequent digit
--- is nested inside the previous type constructor via its type parameter. Hence,
--- the encoding is terminated by the @()@ type constructor. For example, the
--- number 4 would be expressed as: @One (Zero (Zero ()))@.
---
--- Alternatively, if the compiler supports type-level naturals then these can
--- be used via the 'Lit' type constructor. For example, the number 4 can be
--- expressed as: @Lit 4@.
---
--- To supply a complete example, a 4-bit integer type could be built from a
--- 'Word8' and specified as either @OddWord Word8 (One (Zero (Zero ())))@ or
--- @OddWord Word8 (Lit 4)@.
+-- bits specified at the type level. The first type parameter @a@ must supply
+-- an integer type which can hold at least as many bits as required for the
+-- 'OddWord'. The second type parameter @n@ then, using type-level naturals,
+-- specifies the length in bits which the 'OddWord' will be restricted to.
 --
 -- The behaviour of an 'OddWord' is undefined if the specified length is
 -- greater than that of the underlying integer type. The behaviour is also
