@@ -12,16 +12,15 @@ import GHC.TypeLits
 
 import Equiv
 
-genOddWord :: forall a n.
-    (Integral a, Bits a, TypeNum n) =>
-    Proxy (OddWord a n) -> Gen (OddWord a n)
+genOddWord :: forall a.
+    (Integral a, Bounded a) => Proxy a -> Gen a
 genOddWord _ =
-    fmap (fromIntegral :: Integer -> OddWord a n) $ choose (
-        fromIntegral (minBound::OddWord a n),
-        fromIntegral (maxBound::OddWord a n))
+    fmap (fromIntegral :: Integer -> a) $ choose (
+        fromIntegral (minBound::a),
+        fromIntegral (maxBound::a))
 
-propRotateRL :: (Integral a, FiniteBitsBase a, TypeNum n) =>
-    Proxy (OddWord a n) -> Property
+propRotateRL :: (Integral a, Bounded a, FiniteBits a) =>
+    Proxy a -> Property
 propRotateRL proxy =
     property $ do
         x <- genOddWord proxy

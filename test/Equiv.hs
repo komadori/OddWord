@@ -138,4 +138,4 @@ verifyEquivalence width _ _ = property $ \(us :: [UFunc n]) ->
     in toInteger (refFn 0) == toInteger (tstFn 0)
 
 -- | A 16-bit word backed by something else.
-type TestWord16 a = OddWord a 16
+type TestWord16 a = WrapWord a 16

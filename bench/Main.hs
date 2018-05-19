@@ -25,6 +25,6 @@ main :: IO ()
 main =
     defaultMain [
         benchNum (1::Word),
-        benchNum (1::Word20),
-        benchNum (1::(OddWord Word32 20))
+        benchNum (1::(WrapWord Word32 20)),
+        benchNum (1::(OddWord 20))
     ]

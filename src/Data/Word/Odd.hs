@@ -6,6 +6,7 @@
 module Data.Word.Odd (
     -- * Odd Word Wrapper
     OddWord,
+    WrapWord,
 
     -- * Type Numbers
     TypeNum,
@@ -33,17 +34,27 @@ import Data.Function
 import Data.Typeable
 import GHC.TypeLits
 
+#include "MachDeps.h"
+
 -- | 'OddWord' provides a range of unsigned integer word types with a length in
--- bits specified at the type level. The first type parameter @a@ must supply
--- an integer type which can hold at least as many bits as required for the
--- 'OddWord'. The second type parameter @n@ then, using type-level naturals,
--- specifies the length in bits which the 'OddWord' will be restricted to.
+-- bits specified at the type level. It is a type alias around 'WrapWord'
+-- which automatically determines a suitable base type.
+type OddWord (n::Nat) = WrapWord (BaseWord n) n
+
+type family BaseWordImpl (cmp::Ordering) where
+    BaseWordImpl GT = Integer
+    BaseWordImpl u  = Word
+
+type BaseWord (n::Nat) = BaseWordImpl (CmpNat n WORD_SIZE_IN_BITS)
+
+-- | 'WrapWord' encapsulates an integer type @a@ and provides a set of
+-- mumeric instances which use only the first @n@ bits of that type.
 --
--- The behaviour of an 'OddWord' is undefined if the specified length is
+-- The behaviour of an 'WrapWord' is undefined if the specified length is
 -- greater than that of the underlying integer type. The behaviour is also
 -- undefined if the specified length is equal to that of the underlying integer
 -- type and that type is also signed.
-newtype OddWord a (n::Nat) = OW {unOW :: a} deriving (Eq, Ord, Typeable)
+newtype WrapWord a (n::Nat) = OW {unOW :: a} deriving (Eq, Ord, Typeable)
 
 newtype TypeNumBuilder (a::Nat) = TypeNumBuilder Int
 
@@ -125,7 +136,7 @@ instance (ZNatValue (ToZNat n)) => TypeNum n where
     typeNum = TypeNumBuilder
         (fromIntegral $ znatIntVal (Proxy :: Proxy (ToZNat n)))
 
--- | Required to implement 'FiniteBits' for an 'OddWord' based on type @a@.
+-- | Required to implement 'FiniteBits' for an 'WrapWord' based on type @a@.
 class Bits a => FiniteBitsBase a where
     -- | Count the leading zeros on a @w@-bit wide word.
     subWordClz :: Int -> a -> Int
@@ -156,42 +167,47 @@ instance FiniteBitsBase Word64 where
     subWordClz w x = countLeadingZeros x + w - finiteBitSize x
     subWordCtz w x = min (countTrailingZeros x) w
 
+instance FiniteBitsBase Word where
+    subWordClz w x = countLeadingZeros x + w - finiteBitSize x
+    subWordCtz w x = min (countTrailingZeros x) w
+
 instance FiniteBitsBase Integer where
 
--- | Wraps both parts of a homogenous pair with the OddWord constructor.
-pairOW :: (a, a) -> (OddWord a n, OddWord a n)
+-- | Wraps both parts of a homogenous pair with the WrapWord constructor.
+pairOW :: (a, a) -> (WrapWord a n, WrapWord a n)
 pairOW = uncurry ((,) `on` OW)
 
--- | An OddWord with all the bits set, used for masking.
-owMask :: forall a n. (Num a, Bits a, TypeNum n) => OddWord a n
+-- | An WrapWord with all the bits set, used for masking.
+owMask :: forall a n. (Num a, Bits a, TypeNum n) => WrapWord a n
 owMask = OW . (flip (-) 1) . bit $ fromTypeNum (typeNum :: TypeNumBuilder n)
 
--- | Smart constructor for OddWords which masks off the unused upper bits.
-maskOW :: forall a n. (Num a, Bits a, TypeNum n) => a -> OddWord a n
-maskOW w = OW $ w .&. unOW (owMask :: OddWord a n)
+-- | Smart constructor for WrapWords which masks off the unused upper bits.
+maskOW :: forall a n. (Num a, Bits a, TypeNum n) => a -> WrapWord a n
+maskOW w = OW $ w .&. unOW (owMask :: WrapWord a n)
+{-# INLINE maskOW #-}
 
 -- | Applies a function to the first component of each pair in a list thereof.
 mapFst :: (a -> b) -> [(a, c)] -> [(b, c)]
 mapFst f xs = map (\(a,c) -> (f a,c)) xs
 
 --
--- Instances for the OddWord type
+-- Instances for the WrapWord type
 --
 -- The instances largely forward operations to the underlying integer type
 -- while wrapping and unwrapping the newtype, and masking or otherwise
 -- adjusting the results as appropriate for the desired bit length of the word.
 --
 
-instance (Show a) => Show (OddWord a n) where
+instance (Show a) => Show (WrapWord a n) where
     showsPrec p (OW x) s = showsPrec p x s
     show (OW x)          = show x
     showList xs          = showList $ map unOW xs 
 
-instance (Read a, Num a, Bits a, TypeNum n) => Read (OddWord a n) where
+instance (Read a, Num a, Bits a, TypeNum n) => Read (WrapWord a n) where
     readsPrec p s = mapFst maskOW $ readsPrec p s
     readList s    = mapFst (map maskOW) $ readList s
 
-instance (Num a, Bits a, TypeNum n) => Num (OddWord a n) where
+instance (Num a, Bits a, TypeNum n) => Num (WrapWord a n) where
     (OW l) + (OW r) = maskOW $ (l + r)
     (OW l) * (OW r) = maskOW $ (l * r)
     (OW l) - (OW r) = maskOW $ (l - r)
@@ -201,19 +217,19 @@ instance (Num a, Bits a, TypeNum n) => Num (OddWord a n) where
                   | otherwise = 1
     fromInteger i = maskOW $ fromInteger i 
 
-instance (Real a, Bits a, TypeNum n) => Real (OddWord a n) where
+instance (Real a, Bits a, TypeNum n) => Real (WrapWord a n) where
     toRational (OW x) = toRational x
 
-instance (Num a, Bits a, TypeNum n) => Bounded (OddWord a n) where
+instance (Num a, Bits a, TypeNum n) => Bounded (WrapWord a n) where
     minBound = 0
     maxBound = owMask
 
-instance (Enum a, Ord a, Num a, Bits a, TypeNum n) => Enum (OddWord a n) where
+instance (Enum a, Ord a, Num a, Bits a, TypeNum n) => Enum (WrapWord a n) where
     succ x = x + 1
     pred x = x - 1
-    toEnum i | i >= 0 && fromIntegral i <= unOW (owMask :: OddWord a n)
+    toEnum i | i >= 0 && fromIntegral i <= unOW (owMask :: WrapWord a n)
              = OW $ toEnum i
-             | otherwise = error "OddWord: toEnum: Index out of bounds."
+             | otherwise = error "WrapWord: toEnum: Index out of bounds."
     fromEnum (OW x) = fromEnum x
     enumFrom x = enumFromTo x owMask
     enumFromThen x1 x2 = enumFromThenTo x1 x2 bound
@@ -222,7 +238,7 @@ instance (Enum a, Ord a, Num a, Bits a, TypeNum n) => Enum (OddWord a n) where
     enumFromTo (OW x) (OW y) = map OW $ enumFromTo x y
     enumFromThenTo (OW x1) (OW x2) (OW y) = map OW $ enumFromThenTo x1 x2 y
 
-instance (Integral a, Bits a, TypeNum n) => Integral (OddWord a n) where
+instance (Integral a, Bits a, TypeNum n) => Integral (WrapWord a n) where
     quot (OW n) (OW d) = OW $ quot n d
     rem  (OW n) (OW d) = OW $ rem n d
     div  (OW n) (OW d) = OW $ div n d
@@ -231,7 +247,7 @@ instance (Integral a, Bits a, TypeNum n) => Integral (OddWord a n) where
     divMod  (OW n) (OW d) = pairOW $ divMod n d
     toInteger (OW x) = toInteger x
 
-instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
+instance (Num a, Bits a, TypeNum n) => Bits (WrapWord a n) where
     (OW l) .&. (OW r) = OW $ l .&. r
     (OW l) .|. (OW r) = OW $ l .|. r
     xor (OW l) (OW r) = OW $ xor l r
@@ -253,16 +269,16 @@ instance (Num a, Bits a, TypeNum n) => Bits (OddWord a n) where
     shiftL (OW x) n = maskOW $ shiftL x n
     shiftR (OW x) n = OW $ shiftR x n
     rotateL (OW x) n = OW $
-        (shiftL x n' .&. unOW (owMask :: OddWord a n)) .|. shiftR x (w-n')
+        (shiftL x n' .&. unOW (owMask :: WrapWord a n)) .|. shiftR x (w-n')
         where n' = n `mod` w
               w = fromTypeNum (typeNum :: TypeNumBuilder n)
     rotateR (OW x) n = OW $
-        shiftR x n' .|. (shiftL x (w-n') .&. unOW (owMask :: OddWord a n))
+        shiftR x n' .|. (shiftL x (w-n') .&. unOW (owMask :: WrapWord a n))
         where n' = n `mod` w
               w  = fromTypeNum (typeNum :: TypeNumBuilder n)
     popCount (OW x) = popCount x
 
-instance (Num a, FiniteBitsBase a, TypeNum n) => FiniteBits (OddWord a n) where
+instance (Num a, FiniteBitsBase a, TypeNum n) => FiniteBits (WrapWord a n) where
     finiteBitSize _ = fromTypeNum (typeNum :: TypeNumBuilder n) 
     countLeadingZeros (OW x) =
         subWordClz (fromTypeNum (typeNum :: TypeNumBuilder n)) x
@@ -273,66 +289,66 @@ instance (Num a, FiniteBitsBase a, TypeNum n) => FiniteBits (OddWord a n) where
 -- Predefined Odd Words
 --
 
-type Word1  = OddWord Word8 1
-type Word2  = OddWord Word8 2
-type Word3  = OddWord Word8 3
-type Word4  = OddWord Word8 4
-type Word5  = OddWord Word8 5
-type Word6  = OddWord Word8 6
-type Word7  = OddWord Word8 7
+type Word1  = OddWord 1
+type Word2  = OddWord 2
+type Word3  = OddWord 3
+type Word4  = OddWord 4
+type Word5  = OddWord 5
+type Word6  = OddWord 6
+type Word7  = OddWord 7
 --type Word8
-type Word9  = OddWord Word16 9
-type Word10 = OddWord Word16 10
-type Word11 = OddWord Word16 11
-type Word12 = OddWord Word16 12
-type Word13 = OddWord Word16 13
-type Word14 = OddWord Word16 14
-type Word15 = OddWord Word16 15
+type Word9  = OddWord 9
+type Word10 = OddWord 10
+type Word11 = OddWord 11
+type Word12 = OddWord 12
+type Word13 = OddWord 13
+type Word14 = OddWord 14
+type Word15 = OddWord 15
 --type Word16
-type Word17 = OddWord Word32 17
-type Word18 = OddWord Word32 18
-type Word19 = OddWord Word32 19
-type Word20 = OddWord Word32 20
-type Word21 = OddWord Word32 21
-type Word22 = OddWord Word32 22
-type Word23 = OddWord Word32 23
-type Word24 = OddWord Word32 24
-type Word25 = OddWord Word32 25
-type Word26 = OddWord Word32 26
-type Word27 = OddWord Word32 27
-type Word28 = OddWord Word32 28
-type Word29 = OddWord Word32 29
-type Word30 = OddWord Word32 30
-type Word31 = OddWord Word32 31
+type Word17 = OddWord 17
+type Word18 = OddWord 18
+type Word19 = OddWord 19
+type Word20 = OddWord 20
+type Word21 = OddWord 21
+type Word22 = OddWord 22
+type Word23 = OddWord 23
+type Word24 = OddWord 24
+type Word25 = OddWord 25
+type Word26 = OddWord 26
+type Word27 = OddWord 27
+type Word28 = OddWord 28
+type Word29 = OddWord 29
+type Word30 = OddWord 30
+type Word31 = OddWord 31
 --type Word32
-type Word33 = OddWord Word64 33
-type Word34 = OddWord Word64 34
-type Word35 = OddWord Word64 35
-type Word36 = OddWord Word64 36
-type Word37 = OddWord Word64 37
-type Word38 = OddWord Word64 38
-type Word39 = OddWord Word64 39
-type Word40 = OddWord Word64 40
-type Word41 = OddWord Word64 41
-type Word42 = OddWord Word64 42
-type Word43 = OddWord Word64 43
-type Word44 = OddWord Word64 44
-type Word45 = OddWord Word64 45
-type Word46 = OddWord Word64 46
-type Word47 = OddWord Word64 47
-type Word48 = OddWord Word64 48
-type Word49 = OddWord Word64 49
-type Word50 = OddWord Word64 50
-type Word51 = OddWord Word64 51
-type Word52 = OddWord Word64 52
-type Word53 = OddWord Word64 53
-type Word54 = OddWord Word64 54
-type Word55 = OddWord Word64 55
-type Word56 = OddWord Word64 56
-type Word57 = OddWord Word64 57
-type Word58 = OddWord Word64 58
-type Word59 = OddWord Word64 59
-type Word60 = OddWord Word64 60
-type Word61 = OddWord Word64 61
-type Word62 = OddWord Word64 62
-type Word63 = OddWord Word64 63
+type Word33 = OddWord 33
+type Word34 = OddWord 34
+type Word35 = OddWord 35
+type Word36 = OddWord 36
+type Word37 = OddWord 37
+type Word38 = OddWord 38
+type Word39 = OddWord 39
+type Word40 = OddWord 40
+type Word41 = OddWord 41
+type Word42 = OddWord 42
+type Word43 = OddWord 43
+type Word44 = OddWord 44
+type Word45 = OddWord 45
+type Word46 = OddWord 46
+type Word47 = OddWord 47
+type Word48 = OddWord 48
+type Word49 = OddWord 49
+type Word50 = OddWord 50
+type Word51 = OddWord 51
+type Word52 = OddWord 52
+type Word53 = OddWord 53
+type Word54 = OddWord 54
+type Word55 = OddWord 55
+type Word56 = OddWord 56
+type Word57 = OddWord 57
+type Word58 = OddWord 58
+type Word59 = OddWord 59
+type Word60 = OddWord 60
+type Word61 = OddWord 61
+type Word62 = OddWord 62
+type Word63 = OddWord 63
